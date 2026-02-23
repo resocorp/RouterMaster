@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Like, In, IsNull } from 'typeorm';
+import { Repository, DataSource, Like, In, IsNull, DeepPartial } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Subscriber } from './entities/subscriber.entity';
 import { ServicePlan } from '../service-plans/entities/service-plan.entity';
@@ -65,13 +65,9 @@ export class SubscribersService {
     if (exists) throw new ConflictException('Username already exists');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const subscriber = this.repo.create({
-      ...dto,
-      tenantId,
-      passwordHash,
-      password: undefined,
-    } as any);
-    delete (subscriber as any).password;
+    const data: any = { ...dto, tenantId, passwordHash };
+    delete data.password;
+    const subscriber = this.repo.create(data as DeepPartial<Subscriber>);
 
     if (dto.planId) {
       const plan = await this.planRepo.findOne({ where: { id: dto.planId, tenantId } });
@@ -178,7 +174,7 @@ export class SubscribersService {
         grossPrice,
         remark: dto.remark || `Credits added: ${amount} units`,
         paymentDate: now,
-      });
+      } as DeepPartial<Invoice>);
       await qr.manager.save(invoice);
 
       await qr.commitTransaction();
