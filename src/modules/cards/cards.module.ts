@@ -37,7 +37,7 @@ export class CardsService {
 
   async createSeries(tenantId: string, dto: any) {
     const series = this.seriesRepo.create({ ...dto, tenantId });
-    const saved = await this.seriesRepo.save(series);
+    const saved = (await this.seriesRepo.save(series) as unknown) as CardSeries;
 
     const cards: Partial<Card>[] = [];
     for (let i = 0; i < (dto.quantity || 0); i++) {
