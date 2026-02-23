@@ -6,9 +6,9 @@ const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'radius',
-  password: process.env.DB_PASSWORD || 'radius',
-  database: process.env.DB_DATABASE || 'radius_nexus',
+  username: process.env.DB_USERNAME || 'radiusnexus',
+  password: process.env.DB_PASSWORD || 'radiusnexus_secret',
+  database: process.env.DB_DATABASE || 'radiusnexus',
   entities: [path.join(__dirname, '**/*.entity{.ts,.js}')],
   synchronize: false,
 });

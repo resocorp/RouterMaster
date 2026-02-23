@@ -49,7 +49,7 @@ export class SubscribersService {
     if (filters.groupId) qb.andWhere('s.group_id = :gid', { gid: filters.groupId });
     if (filters.enabled !== undefined) qb.andWhere('s.enabled = :en', { en: filters.enabled === 'true' });
 
-    qb.orderBy('s.created_at', 'DESC').skip((page - 1) * limit).take(limit);
+    qb.orderBy('s.createdAt', 'DESC').skip((page - 1) * limit).take(limit);
     const [data, total] = await qb.getManyAndCount();
     return new PaginatedResult(data, total, page, limit);
   }

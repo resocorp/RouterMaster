@@ -7,17 +7,28 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
 class LoginDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   username: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   password: string;
 }
 
 class RefreshDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   refresh_token: string;
 }
 
