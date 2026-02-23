@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { api, ServicePlan } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import DataTable, { StatusBadge, PageHeader } from '@/components/DataTable';
 
 export default function ServicePlansPage() {
+  const router = useRouter();
   const [data, setData] = useState<ServicePlan[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,8 +27,21 @@ export default function ServicePlansPage() {
 
   return (
     <div>
-      <PageHeader title="Service Plans" />
-      <DataTable columns={columns} data={data} loading={loading} />
+      <PageHeader title="Service Plans" action={
+        <button
+          onClick={() => router.push('/dashboard/service-plans/new')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          <Plus size={16} />
+          New Service Plan
+        </button>
+      } />
+      <DataTable
+        columns={columns}
+        data={data}
+        loading={loading}
+        onRowClick={(p) => router.push(`/dashboard/service-plans/${p.id}`)}
+      />
     </div>
   );
 }

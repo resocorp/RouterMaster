@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { api, Manager } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import DataTable, { StatusBadge, PageHeader } from '@/components/DataTable';
 
 export default function ManagersPage() {
+  const router = useRouter();
   const [data, setData] = useState<Manager[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,8 +28,21 @@ export default function ManagersPage() {
 
   return (
     <div>
-      <PageHeader title="Managers" />
-      <DataTable columns={columns} data={data} loading={loading} />
+      <PageHeader title="Managers" action={
+        <button
+          onClick={() => router.push('/dashboard/managers/new')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          <Plus size={16} />
+          New Manager
+        </button>
+      } />
+      <DataTable
+        columns={columns}
+        data={data}
+        loading={loading}
+        onRowClick={(m) => router.push(`/dashboard/managers/${m.id}`)}
+      />
     </div>
   );
 }

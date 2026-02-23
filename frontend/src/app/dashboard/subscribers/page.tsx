@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { api, Subscriber, PaginatedResult } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import DataTable, { StatusBadge, PageHeader } from '@/components/DataTable';
 
 export default function SubscribersPage() {
+  const router = useRouter();
   const [data, setData] = useState<Subscriber[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -46,12 +49,25 @@ export default function SubscribersPage() {
             onKeyDown={(e) => e.key === 'Enter' && load(1, search)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           />
-          <button onClick={() => load(1, search)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+          <button onClick={() => load(1, search)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">
             Search
+          </button>
+          <button
+            onClick={() => router.push('/dashboard/subscribers/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={16} />
+            New User
           </button>
         </div>
       } />
-      <DataTable columns={columns} data={data} loading={loading} emptyMessage="No subscribers found" />
+      <DataTable
+        columns={columns}
+        data={data}
+        loading={loading}
+        emptyMessage="No subscribers found"
+        onRowClick={(s) => router.push(`/dashboard/subscribers/${s.id}`)}
+      />
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
           <span>{total} total subscribers</span>

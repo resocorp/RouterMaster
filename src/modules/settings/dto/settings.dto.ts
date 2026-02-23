@@ -29,170 +29,240 @@ export class UpdateTenantDto {
 }
 
 export class UpdateSystemSettingsDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
+  // ── General ──
+  @ApiPropertyOptional() @IsOptional() @IsString()
   disconnectMethod?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  hideLimitsInUserList?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  addNewNasToAllServices?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  addNewManagerToAllServices?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsInt()
+  disconnectTimeHour?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsInt()
+  disconnectTimeMinute?: number;
+
+  // ── Billing ──
+  @ApiPropertyOptional() @IsOptional() @IsString()
   currency?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
   vatPercent?: number;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(28)
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  advSalesTax?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) @Max(28)
   postpaidRenewalDay?: number;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
+  @ApiPropertyOptional() @IsOptional() @IsInt()
   billingPeriodStart?: number;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
+  @ApiPropertyOptional() @IsOptional() @IsInt()
   gracePeriodDays?: number;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  selfRegEnabled?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  resetCreditsOnServiceChange?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  selfRegActivation?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  disconnectPostpaidAtBillingStart?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsArray()
-  selfRegFields?: any[];
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  disableAccountsUnpaidInvoices?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  captchaEnabled?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  disableAccountsExpiredContract?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  ucpEditData?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  enableVoucherRedemption?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  ucpServiceChange?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  enableAccountRecharge?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  ucpChangePassword?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  enableDepositPurchase?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  ucpRedeemVoucher?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  ucpViewInvoices?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  ucpRecharge?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  lockFirstMac?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  iasSmsVerification?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  alertLevelType?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  alertDl?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  alertUl?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  alertTotal?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  alertTimeMinutes?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  alertExpiryDays?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  alertSendOnce?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
+  // Payment gateways
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
   gwInternal?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  gwStripe?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwPaypalStandard?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  gwPaystack?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwPaypalPro?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwPaypalExpress?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwNetcash?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwPayfast?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwAuthorizeNet?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwDpsPaymentExpress?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gw2Checkout?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwPayU?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwPaytm?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwBkash?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
   gwFlutterwave?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  gwPaypal?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwEasypay?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  notifyManagerOnReg?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwMpesa?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  gwCustom?: boolean;
+
+  // ── Account ──
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  lockFirstMac?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  ucpEditData?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsString()
+  ucpServiceChange?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  ucpChangePassword?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  ucpRedeemVoucher?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  ucpViewInvoices?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  ucpRecharge?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsArray()
+  mandatoryFields?: string[];
+
+  // ── Self Reg & IAS ──
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  selfRegEnabled?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  selfRegNameRequiresSms?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  selfRegNameRequiresEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  selfRegCellRequiresSms?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsArray()
+  selfRegMandatoryFields?: string[];
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  selfRegAllowDuplicateEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  selfRegAllowDuplicateCell?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsInt()
+  selfRegDefaultSimUse?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsString()
+  selfRegDefaultUserGroup?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  captchaEnabled?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsArray()
+  iasMandatoryFields?: string[];
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  iasAllowDuplicateEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  iasAllowDuplicateCell?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  iasSmsVerification?: boolean;
+
+  // ── Notifications ──
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  notifyManagerOnRegEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  newServicePlanEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  newServicePlanSms?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
   welcomeEmail?: boolean;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
   welcomeSms?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  renewalNotificationEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  renewalNotificationSms?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  expiryAlertEmail?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  expiryAlertSms?: boolean;
+
+  @ApiPropertyOptional() @IsOptional() @IsString()
+  alertLevelType?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertDlMb?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertDlPercent?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertUlMb?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertUlPercent?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertTotalMb?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertTotalPercent?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsString()
+  alertOnlineTime?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsNumber()
+  alertOnlineTimePercent?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsInt()
+  alertExpiryDays?: number;
+
+  @ApiPropertyOptional() @IsOptional() @IsBoolean()
+  alertSendOnce?: boolean;
 }

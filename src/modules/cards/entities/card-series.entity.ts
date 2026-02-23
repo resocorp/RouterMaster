@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'card_series', orderBy: { createdAt: 'DESC' } })
+@Entity('card_series')
 export class CardSeries {
   @PrimaryGeneratedColumn('uuid')
   id: string;

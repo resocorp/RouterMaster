@@ -24,6 +24,7 @@ import { IpPoolsModule } from './modules/ip-pools/ip-pools.module';
 import { AccessPointsModule } from './modules/access-points/access-points.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { JobsModule } from './modules/jobs/jobs.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
     AccessPointsModule,
     NotificationsModule,
     JobsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

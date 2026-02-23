@@ -38,6 +38,9 @@ export class NasDevice {
   @Column({ name: 'api_password', type: 'varchar', length: 255, nullable: true })
   apiPassword: string;
 
+  @Column({ name: 'api_version', type: 'varchar', length: 20, default: 'pre-6.45.1' })
+  apiVersion: string;
+
   @Column({ name: 'cisco_bw', type: 'varchar', length: 20, default: 'none' })
   ciscoBw: string;
 

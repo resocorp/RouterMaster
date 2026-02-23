@@ -44,14 +44,15 @@ services:
       - '1813:1813/udp'
       - '3799:3799/udp'
     volumes:
-      - ./docker/freeradius/clients.conf:/etc/freeradius/clients.conf
-      - ./docker/freeradius/mods-available/rest:/etc/freeradius/mods-available/rest
-      - ./docker/freeradius/mods-enabled/rest:/etc/freeradius/mods-enabled/rest
-      - ./docker/freeradius/sites-enabled/default:/etc/freeradius/sites-enabled/default
-      - ./docker/freeradius/sites-enabled/coa:/etc/freeradius/sites-enabled/coa
-      - ./docker/freeradius/policy.d/filter:/etc/freeradius/policy.d/filter
+      - ./docker/freeradius/clients.conf:/tmp/freeradius/clients.conf
+      - ./docker/freeradius/mods-available/rest:/tmp/freeradius/mods-available/rest
+      - ./docker/freeradius/mods-enabled/rest:/tmp/freeradius/mods-enabled/rest
+      - ./docker/freeradius/sites-enabled/default:/tmp/freeradius/sites-enabled/default
+      - ./docker/freeradius/sites-enabled/coa:/tmp/freeradius/sites-enabled/coa
+      - ./docker/freeradius/docker-entrypoint.sh:/docker-entrypoint.sh
     depends_on:
       - api
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     command: freeradius -X
 
   api:
@@ -78,6 +79,7 @@ services:
       JWT_ACCESS_EXPIRY: 15m
       JWT_REFRESH_EXPIRY: 7d
       FREERADIUS_CONFIG_PATH: /etc/freeradius
+      FREERADIUS_HOST: freeradius
     volumes:
       - .:/app
       - /app/node_modules

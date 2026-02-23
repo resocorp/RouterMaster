@@ -1,67 +1,65 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
-import { formatBytes, formatCurrency } from '@/lib/utils';
+import Link from 'next/link';
 import { PageHeader } from '@/components/DataTable';
 
+const reportSections = [
+  {
+    title: 'Users & Sessions',
+    items: [
+      { href: '/dashboard/reports/online-radius-users', label: 'Online RADIUS users', desc: 'View currently connected users with real-time session data' },
+      { href: '/dashboard/reports/registered-cable-modems', label: 'Registered cable modems', desc: 'List of registered DOCSIS cable modems' },
+    ],
+  },
+  {
+    title: 'Traffic',
+    items: [
+      { href: '/dashboard/reports/traffic-report', label: 'Traffic report', desc: 'Traffic usage per user over time' },
+      { href: '/dashboard/reports/traffic-summary', label: 'Traffic summary', desc: 'Aggregated daily traffic summary' },
+      { href: '/dashboard/reports/daily-traffic-report', label: 'Daily traffic report', desc: 'Per-user daily traffic breakdown' },
+      { href: '/dashboard/reports/find-traffic-data', label: 'Find traffic data', desc: 'Search session traffic by username and date' },
+    ],
+  },
+  {
+    title: 'Connections & Auth',
+    items: [
+      { href: '/dashboard/reports/connection-report', label: 'Connection report', desc: 'Closed session history with disconnect reasons' },
+      { href: '/dashboard/reports/authentication-log', label: 'Authentication log', desc: 'RADIUS authentication accept/reject log' },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { href: '/dashboard/reports/last-syslog-events', label: 'Last syslog events', desc: 'Recent system log entries' },
+      { href: '/dashboard/reports/browse-syslog', label: 'Browse syslog', desc: 'Browse and filter full system log' },
+      { href: '/dashboard/reports/system-information', label: 'System information', desc: 'Server and service status overview' },
+      { href: '/dashboard/reports/system-statistics', label: 'System statistics', desc: 'Platform-wide usage and performance metrics' },
+    ],
+  },
+];
+
 export default function ReportsPage() {
-  const [stats, setStats] = useState<any>(null);
-  const [topUsers, setTopUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      api.get('/reports/subscriber-stats'),
-      api.get<any[]>('/reports/top-users?limit=10'),
-    ]).then(([s, t]) => { setStats(s); setTopUsers(t); })
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
-
   return (
     <div>
       <PageHeader title="Reports" />
-
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          {Object.entries(stats).map(([key, val]) => (
-            <div key={key} className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-sm text-gray-500 capitalize">{key}</p>
-              <p className="text-2xl font-bold text-gray-900">{val as number}</p>
+      <div className="space-y-8">
+        {reportSections.map((section) => (
+          <div key={section.title}>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{section.title}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {section.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all group"
+                >
+                  <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{item.label}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-          <h2 className="font-medium text-gray-700">Top 10 Users by Traffic</h2>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="px-4 py-2 text-left text-gray-500 font-medium">Username</th>
-              <th className="px-4 py-2 text-left text-gray-500 font-medium">Download</th>
-              <th className="px-4 py-2 text-left text-gray-500 font-medium">Upload</th>
-              <th className="px-4 py-2 text-left text-gray-500 font-medium">Sessions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {topUsers.map((u, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-4 py-2 font-medium">{u.username}</td>
-                <td className="px-4 py-2">{formatBytes(u.totalDownload || 0)}</td>
-                <td className="px-4 py-2">{formatBytes(u.totalUpload || 0)}</td>
-                <td className="px-4 py-2">{u.sessions}</td>
-              </tr>
-            ))}
-            {topUsers.length === 0 && (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">No data</td></tr>
-            )}
-          </tbody>
-        </table>
+          </div>
+        ))}
       </div>
     </div>
   );
