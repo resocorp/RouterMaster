@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: radiusnexus-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: radiusnexus
+      POSTGRES_PASSWORD: radiusnexus_secret
+      POSTGRES_DB: radiusnexus
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U radiusnexus']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: radiusnexus-redis
+    restart: unless-stopped
+    command: redis-server --requirepass redis_secret
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'redis_secret', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  freeradius:
+    image: freeradius/freeradius-server:latest
+    container_name: radiusnexus-radius
+    restart: unless-stopped
+    ports:
+      - '1812:1812/udp'
+      - '1813:1813/udp'
+      - '3799:3799/udp'
+    volumes:
+      - ./docker/freeradius/clients.conf:/etc/freeradius/clients.conf
+      - ./docker/freeradius/mods-available/rest:/etc/freeradius/mods-available/rest
+      - ./docker/freeradius/mods-enabled/rest:/etc/freeradius/mods-enabled/rest
+      - ./docker/freeradius/sites-enabled/default:/etc/freeradius/sites-enabled/default
+      - ./docker/freeradius/sites-enabled/coa:/etc/freeradius/sites-enabled/coa
+      - ./docker/freeradius/policy.d/filter:/etc/freeradius/policy.d/filter
+    depends_on:
+      - api
+    command: freeradius -X
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    container_name: radiusnexus-api
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: radiusnexus
+      DB_PASSWORD: radiusnexus_secret
+      DB_DATABASE: radiusnexus
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_secret
+      JWT_SECRET: change-this-in-production
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      FREERADIUS_CONFIG_PATH: /etc/freeradius
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./docker/freeradius:/etc/freeradius
+    working_dir: /app
+    command: npm run start:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: radiusnexus-frontend
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:

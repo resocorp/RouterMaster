@@ -1,0 +1,28 @@
+policy filter_username {
+    if (&User-Name) {
+        if (&User-Name =~ / /) {
+            update request {
+                &Module-Failure-Message += 'Rejected: Username contains whitespace'
+            }
+            reject
+        }
+        if (&User-Name =~ /@.*@/ ) {
+            update request {
+                &Module-Failure-Message += 'Rejected: Username contains multiple @ signs'
+            }
+            reject
+        }
+        if (&User-Name =~ /\\.\\./ ) {
+            update request {
+                &Module-Failure-Message += 'Rejected: Username contains consecutive dots'
+            }
+            reject
+        }
+        if ((&User-Name =~ /@/) && (&User-Name !~ /@(.+)\\.(.+)$/))  {
+            update request {
+                &Module-Failure-Message += 'Rejected: Badly formed username'
+            }
+            reject
+        }
+    }
+}

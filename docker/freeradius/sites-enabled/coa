@@ -1,0 +1,23 @@
+server coa {
+    listen {
+        type = coa
+        ipaddr = *
+        port = 3799
+    }
+
+    recv-coa {
+        ok
+    }
+
+    send-coa {
+        ok
+    }
+
+    recv-disconnect {
+        ok
+    }
+
+    send-disconnect {
+        ok
+    }
+}

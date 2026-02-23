@@ -1,0 +1,41 @@
+rest {
+    connect_uri = "http://api:3000/api/radius"
+    connect_timeout = 4.0
+    http_negotiation = default
+    chunk = 0
+
+    authorize {
+        uri = "${..connect_uri}/authorize"
+        method = 'post'
+        body = 'json'
+        data = '{"username":"%{User-Name}","password":"%{User-Password}","nas_ip":"%{NAS-IP-Address}","nas_port":"%{NAS-Port}","calling_station":"%{Calling-Station-Id}","called_station":"%{Called-Station-Id}","nas_port_type":"%{NAS-Port-Type}","service_type":"%{Service-Type}"}'
+        tls = ${..tls}
+    }
+
+    authenticate {
+        uri = "${..connect_uri}/authenticate"
+        method = 'post'
+        body = 'json'
+        data = '{"username":"%{User-Name}","password":"%{User-Password}","nas_ip":"%{NAS-IP-Address}","calling_station":"%{Calling-Station-Id}","called_station":"%{Called-Station-Id}"}'
+        tls = ${..tls}
+    }
+
+    accounting {
+        uri = "${..connect_uri}/accounting"
+        method = 'post'
+        body = 'json'
+        data = '{"status_type":"%{Acct-Status-Type}","session_id":"%{Acct-Session-Id}","unique_id":"%{Acct-Unique-Session-Id}","username":"%{User-Name}","nas_ip":"%{NAS-IP-Address}","nas_port":"%{NAS-Port}","nas_port_id":"%{NAS-Port-Id}","framed_ip":"%{Framed-IP-Address}","calling_station":"%{Calling-Station-Id}","called_station":"%{Called-Station-Id}","session_time":"%{Acct-Session-Time}","input_octets":"%{Acct-Input-Octets}","output_octets":"%{Acct-Output-Octets}","input_gigawords":"%{Acct-Input-Gigawords}","output_gigawords":"%{Acct-Output-Gigawords}","terminate_cause":"%{Acct-Terminate-Cause}"}'
+        tls = ${..tls}
+    }
+
+    post-auth {
+        uri = "${..connect_uri}/post-auth"
+        method = 'post'
+        body = 'json'
+        data = '{"username":"%{User-Name}","password":"%{User-Password}","reply":"%{reply:Packet-Type}","nas_ip":"%{NAS-IP-Address}","nas_port":"%{NAS-Port}","calling_station":"%{Calling-Station-Id}"}'
+        tls = ${..tls}
+    }
+
+    tls {
+    }
+}
