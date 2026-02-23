@@ -3,6 +3,7 @@ import { TypeOrmModule, InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UserGroup } from './entities/user-group.entity';
+import { CreateUserGroupDto, UpdateUserGroupDto } from './dto/user-group.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -33,11 +34,11 @@ export class UserGroupsController {
   @Get() @Permissions('list_groups') @ApiOperation({ summary: 'List user groups' })
   findAll(@TenantId() tid: string) { return this.service.findAll(tid); }
   @Post() @Permissions('register_groups') @ApiOperation({ summary: 'Create user group' })
-  create(@TenantId() tid: string, @Body() dto: any) { return this.service.create(tid, dto); }
+  create(@TenantId() tid: string, @Body() dto: CreateUserGroupDto) { return this.service.create(tid, dto); }
   @Get(':id') @Permissions('list_groups') @ApiOperation({ summary: 'Get user group' })
   findOne(@Param('id') id: string, @TenantId() tid: string) { return this.service.findOne(id, tid); }
   @Put(':id') @Permissions('edit_groups') @ApiOperation({ summary: 'Update user group' })
-  update(@Param('id') id: string, @TenantId() tid: string, @Body() dto: any) { return this.service.update(id, tid, dto); }
+  update(@Param('id') id: string, @TenantId() tid: string, @Body() dto: UpdateUserGroupDto) { return this.service.update(id, tid, dto); }
   @Delete(':id') @Permissions('delete_groups') @ApiOperation({ summary: 'Delete user group' })
   remove(@Param('id') id: string, @TenantId() tid: string) { return this.service.remove(id, tid); }
 }

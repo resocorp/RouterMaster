@@ -14,6 +14,9 @@ export class CardSeries {
   @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId: string;
 
+  @Column({ type: 'varchar', length: 100, default: '' })
+  name: string;
+
   @Column({ name: 'card_type', type: 'enum', enum: ['classic', 'refill'], default: 'classic' })
   cardType: string;
 

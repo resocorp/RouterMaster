@@ -58,6 +58,7 @@ CREATE TABLE system_settings (
     ucp_service_change VARCHAR(20) NOT NULL DEFAULT 'never',
     ucp_change_password BOOLEAN NOT NULL DEFAULT true,
     ucp_redeem_voucher BOOLEAN NOT NULL DEFAULT true,
+    ucp_view_invoices BOOLEAN NOT NULL DEFAULT true,
     ucp_recharge BOOLEAN NOT NULL DEFAULT false,
     lock_first_mac BOOLEAN NOT NULL DEFAULT false,
     ias_sms_verification BOOLEAN NOT NULL DEFAULT false,
@@ -414,6 +415,7 @@ CREATE INDEX idx_invoices_tenant_date ON invoices(tenant_id, created_at);
 CREATE TABLE card_series (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL DEFAULT '',
     card_type card_type NOT NULL DEFAULT 'classic',
     quantity INT NOT NULL DEFAULT 0,
     gross_value DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -558,5 +560,5 @@ CREATE TABLE notification_templates (
     body TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(tenant_id, slug)
+    UNIQUE(tenant_id, slug, channel)
 );

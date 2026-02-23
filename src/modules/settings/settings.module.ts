@@ -3,6 +3,7 @@ import { TypeOrmModule, InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Tenant } from './entities/tenant.entity';
+import { UpdateTenantDto, UpdateSystemSettingsDto } from './dto/settings.dto';
 import { SystemSettings } from './entities/system-settings.entity';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -57,13 +58,13 @@ export class SettingsController {
   getTenant(@TenantId() tid: string) { return this.service.getTenant(tid); }
 
   @Put('tenant') @ApiOperation({ summary: 'Update tenant info' })
-  updateTenant(@TenantId() tid: string, @Body() dto: any) { return this.service.updateTenant(tid, dto); }
+  updateTenant(@TenantId() tid: string, @Body() dto: UpdateTenantDto) { return this.service.updateTenant(tid, dto); }
 
   @Get() @ApiOperation({ summary: 'Get system settings' })
   getSettings(@TenantId() tid: string) { return this.service.getSettings(tid); }
 
   @Put() @ApiOperation({ summary: 'Update system settings' })
-  updateSettings(@TenantId() tid: string, @Body() dto: any) { return this.service.updateSettings(tid, dto); }
+  updateSettings(@TenantId() tid: string, @Body() dto: UpdateSystemSettingsDto) { return this.service.updateSettings(tid, dto); }
 }
 
 @Module({

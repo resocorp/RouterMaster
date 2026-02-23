@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { NotificationTemplate } from './entities/notification-template.entity';
+import { UpsertNotificationTemplateDto, SendTestNotificationDto } from './dto/notifications.dto';
 import { Subscriber } from '../subscribers/entities/subscriber.entity';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -127,13 +128,13 @@ export class NotificationsController {
   getTemplate(@Param('id') id: string, @TenantId() tid: string) { return this.service.getTemplate(id, tid); }
 
   @Post('templates') @ApiOperation({ summary: 'Create/update template' })
-  upsertTemplate(@TenantId() tid: string, @Body() dto: any) { return this.service.upsertTemplate(tid, dto); }
+  upsertTemplate(@TenantId() tid: string, @Body() dto: UpsertNotificationTemplateDto) { return this.service.upsertTemplate(tid, dto); }
 
   @Delete('templates/:id') @ApiOperation({ summary: 'Delete template' })
   deleteTemplate(@Param('id') id: string, @TenantId() tid: string) { return this.service.deleteTemplate(id, tid); }
 
   @Post('send-test') @ApiOperation({ summary: 'Send test notification' })
-  async sendTest(@Body() body: { type: string; to: string; subject?: string; message: string }) {
+  async sendTest(@Body() body: SendTestNotificationDto) {
     if (body.type === 'email') return { sent: await this.service.sendEmail(body.to, body.subject || 'Test', body.message) };
     if (body.type === 'sms') return { sent: await this.service.sendSms(body.to, body.message) };
     return { sent: false, error: 'Unknown type' };

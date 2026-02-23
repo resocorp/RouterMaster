@@ -3,6 +3,7 @@ import { TypeOrmModule, InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Invoice } from './entities/invoice.entity';
+import { CreateInvoiceDto } from './dto/billing.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -86,7 +87,7 @@ export class BillingController {
   findOne(@Param('id') id: string, @TenantId() tid: string) { return this.service.findOne(id, tid); }
 
   @Post('invoices') @Permissions('billing') @ApiOperation({ summary: 'Create manual invoice' })
-  create(@TenantId() tid: string, @Body() dto: any) { return this.service.create(tid, dto); }
+  create(@TenantId() tid: string, @Body() dto: CreateInvoiceDto) { return this.service.create(tid, dto); }
 
   @Get('summary') @Permissions('billing') @ApiOperation({ summary: 'Revenue summary' })
   getSummary(@TenantId() tid: string, @Query('from') from: string, @Query('to') to: string) {

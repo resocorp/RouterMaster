@@ -10,6 +10,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { CreateIasTemplateDto, UpdateIasTemplateDto, ActivateIasDto } from './dto/ias.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 
@@ -30,11 +31,11 @@ export class IasService {
     return t;
   }
 
-  create(tenantId: string, dto: Partial<IasTemplate>) {
+  create(tenantId: string, dto: any) {
     return this.templateRepo.save(this.templateRepo.create({ ...dto, tenantId }));
   }
 
-  async update(id: string, tenantId: string, dto: Partial<IasTemplate>) {
+  async update(id: string, tenantId: string, dto: any) {
     const t = await this.findOne(id, tenantId);
     Object.assign(t, dto);
     return this.templateRepo.save(t);
@@ -90,19 +91,19 @@ export class IasController {
   findAll(@TenantId() tid: string) { return this.service.findAll(tid); }
 
   @Post('templates') @Permissions('register_ias') @ApiOperation({ summary: 'Create IAS template' })
-  create(@TenantId() tid: string, @Body() dto: any) { return this.service.create(tid, dto); }
+  create(@TenantId() tid: string, @Body() dto: CreateIasTemplateDto) { return this.service.create(tid, dto); }
 
   @Get('templates/:id') @Permissions('list_ias') @ApiOperation({ summary: 'Get IAS template' })
   findOne(@Param('id') id: string, @TenantId() tid: string) { return this.service.findOne(id, tid); }
 
   @Put('templates/:id') @Permissions('edit_ias') @ApiOperation({ summary: 'Update IAS template' })
-  update(@Param('id') id: string, @TenantId() tid: string, @Body() dto: any) { return this.service.update(id, tid, dto); }
+  update(@Param('id') id: string, @TenantId() tid: string, @Body() dto: UpdateIasTemplateDto) { return this.service.update(id, tid, dto); }
 
   @Delete('templates/:id') @Permissions('delete_ias') @ApiOperation({ summary: 'Delete IAS template' })
   remove(@Param('id') id: string, @TenantId() tid: string) { return this.service.remove(id, tid); }
 
   @Post('activate') @ApiOperation({ summary: 'Activate IAS session from MAC' })
-  activate(@TenantId() tid: string, @Body() body: { templateId: string; macAddress: string }) {
+  activate(@TenantId() tid: string, @Body() body: ActivateIasDto) {
     return this.service.activateIas(body.templateId, tid, body.macAddress);
   }
 }

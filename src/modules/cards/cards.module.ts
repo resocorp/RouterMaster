@@ -11,6 +11,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { CreateCardSeriesDto, ActivateCardDto } from './dto/cards.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -34,7 +35,7 @@ export class CardsService {
     return s;
   }
 
-  async createSeries(tenantId: string, dto: Partial<CardSeries>) {
+  async createSeries(tenantId: string, dto: any) {
     const series = this.seriesRepo.create({ ...dto, tenantId });
     const saved = await this.seriesRepo.save(series);
 
@@ -113,7 +114,7 @@ export class CardsController {
   listSeries(@TenantId() tid: string) { return this.service.listSeries(tid); }
 
   @Post('series') @Permissions('register_cards') @ApiOperation({ summary: 'Create card series + generate cards' })
-  createSeries(@TenantId() tid: string, @Body() dto: any) { return this.service.createSeries(tid, dto); }
+  createSeries(@TenantId() tid: string, @Body() dto: CreateCardSeriesDto) { return this.service.createSeries(tid, dto); }
 
   @Get('series/:id') @Permissions('list_cards') @ApiOperation({ summary: 'Get card series' })
   getSeries(@Param('id') id: string, @TenantId() tid: string) { return this.service.getSeries(id, tid); }
@@ -124,7 +125,7 @@ export class CardsController {
   }
 
   @Post('activate') @Permissions('activate_cards') @ApiOperation({ summary: 'Activate a card' })
-  activate(@TenantId() tid: string, @Body() body: { pin: string; username: string }) {
+  activate(@TenantId() tid: string, @Body() body: ActivateCardDto) {
     return this.service.activateCard(body.pin, body.username, tid);
   }
 

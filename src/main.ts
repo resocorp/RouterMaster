@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { TenantScopeInterceptor } from './common/interceptors/tenant-scope.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -17,6 +19,9 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new TenantScopeInterceptor());
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN || '*',

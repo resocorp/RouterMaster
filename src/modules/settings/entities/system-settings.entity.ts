@@ -63,6 +63,9 @@ export class SystemSettings {
   @Column({ name: 'ucp_redeem_voucher', type: 'boolean', default: true })
   ucpRedeemVoucher: boolean;
 
+  @Column({ name: 'ucp_view_invoices', type: 'boolean', default: true })
+  ucpViewInvoices: boolean;
+
   @Column({ name: 'ucp_recharge', type: 'boolean', default: false })
   ucpRecharge: boolean;
 

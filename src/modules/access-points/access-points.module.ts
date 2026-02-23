@@ -3,6 +3,7 @@ import { TypeOrmModule, InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AccessPoint } from './entities/access-point.entity';
+import { CreateAccessPointDto, UpdateAccessPointDto } from './dto/access-point.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -33,11 +34,11 @@ export class AccessPointsController {
   @Get() @Permissions('list_ap') @ApiOperation({ summary: 'List access points' })
   findAll(@TenantId() tid: string) { return this.service.findAll(tid); }
   @Post() @Permissions('register_ap') @ApiOperation({ summary: 'Create access point' })
-  create(@TenantId() tid: string, @Body() dto: any) { return this.service.create(tid, dto); }
+  create(@TenantId() tid: string, @Body() dto: CreateAccessPointDto) { return this.service.create(tid, dto); }
   @Get(':id') @Permissions('list_ap') @ApiOperation({ summary: 'Get access point' })
   findOne(@Param('id') id: string, @TenantId() tid: string) { return this.service.findOne(id, tid); }
   @Put(':id') @Permissions('edit_ap') @ApiOperation({ summary: 'Update access point' })
-  update(@Param('id') id: string, @TenantId() tid: string, @Body() dto: any) { return this.service.update(id, tid, dto); }
+  update(@Param('id') id: string, @TenantId() tid: string, @Body() dto: UpdateAccessPointDto) { return this.service.update(id, tid, dto); }
   @Delete(':id') @Permissions('delete_ap') @ApiOperation({ summary: 'Delete access point' })
   remove(@Param('id') id: string, @TenantId() tid: string) { return this.service.remove(id, tid); }
 }
