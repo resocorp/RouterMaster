@@ -319,6 +319,7 @@ CREATE TABLE subscribers (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     username CITEXT NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    password_plain VARCHAR(255),
     account_type account_type NOT NULL DEFAULT 'regular',
     status account_status NOT NULL DEFAULT 'active',
     enabled BOOLEAN NOT NULL DEFAULT true,

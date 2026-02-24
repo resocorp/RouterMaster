@@ -30,6 +30,9 @@ export class Subscriber {
   @Column({ name: 'password_hash', type: 'varchar', length: 255 })
   passwordHash: string;
 
+  @Column({ name: 'password_plain', type: 'varchar', length: 255, nullable: true })
+  passwordPlain: string;
+
   @Column({ name: 'account_type', type: 'enum', enum: ['regular', 'mac', 'docsis', 'mikrotik_acl', 'staros_acl', 'card', 'ias'], default: 'regular' })
   accountType: string;
 

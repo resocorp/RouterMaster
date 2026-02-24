@@ -39,6 +39,7 @@ const mockPlan = {
 const mockSubscriber = {
   id: 'sub-1', username: 'testuser', tenantId: 'tenant-1',
   enabled: true, status: 'active', simUse: 1, macLock: false,
+  passwordPlain: 'test123',
   dlLimitBytes: '10737418240', ulLimitBytes: '5368709120',
   totalLimitBytes: '0', timeLimitSecs: 0,
   dailyDlUsed: '0', dailyUlUsed: '0', dailyTotalUsed: '0',
@@ -183,20 +184,26 @@ describe('RadiusService', () => {
       expect(result.code).toBe(403);
     });
 
-    it('should return 403 for wrong password', async () => {
-      const bcrypt = require('bcrypt');
-      const hash = await bcrypt.hash('correct', 10);
-      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordHash: hash });
+    it('should return 403 for wrong password (plaintext)', async () => {
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'correct' });
       const result = await service.authenticate({
         username: 'testuser', password: 'wrong', nas_ip: '10.0.0.1',
       });
       expect(result.code).toBe(403);
     });
 
-    it('should return 200 for correct password', async () => {
+    it('should return 200 for correct plaintext password', async () => {
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'test123' });
+      const result = await service.authenticate({
+        username: 'testuser', password: 'test123', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(200);
+    });
+
+    it('should return 200 for correct password via bcrypt fallback', async () => {
       const bcrypt = require('bcrypt');
       const hash = await bcrypt.hash('test123', 10);
-      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordHash: hash });
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: null, passwordHash: hash });
       const result = await service.authenticate({
         username: 'testuser', password: 'test123', nas_ip: '10.0.0.1',
       });

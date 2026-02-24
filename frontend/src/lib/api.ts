@@ -84,6 +84,7 @@ export interface PaginatedResult<T> {
 export interface Subscriber {
   id: string;
   username: string;
+  passwordPlain?: string;
   accountType: string;
   status: string;
   enabled: boolean;

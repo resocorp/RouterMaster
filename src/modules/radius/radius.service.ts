@@ -110,7 +110,8 @@ export class RadiusService {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    if (subscriber.dailyResetAt?.toISOString().split('T')[0] !== today) {
+    const dailyResetAtStr = subscriber.dailyResetAt ? String(subscriber.dailyResetAt).split('T')[0] : null;
+    if (dailyResetAtStr !== today) {
       await this.subscriberRepo.update(subscriber.id, {
         dailyDlUsed: '0',
         dailyUlUsed: '0',
@@ -173,6 +174,11 @@ export class RadiusService {
     }
 
     const attributes = this.replyBuilder.build(subscriber, plan, nas);
+
+    if (subscriber.passwordPlain) {
+      attributes['Cleartext-Password'] = subscriber.passwordPlain;
+    }
+
     return { code: 200, attributes };
   }
 
@@ -189,7 +195,12 @@ export class RadiusService {
       return { code: 403, attributes: { 'Reply-Message': 'User not found' } };
     }
 
-    const valid = await bcrypt.compare(data.password, subscriber.passwordHash);
+    let valid = false;
+    if (subscriber.passwordPlain) {
+      valid = data.password === subscriber.passwordPlain;
+    } else {
+      valid = await bcrypt.compare(data.password, subscriber.passwordHash);
+    }
     if (!valid) {
       return { code: 403, attributes: { 'Reply-Message': 'Invalid password' } };
     }
@@ -434,6 +445,16 @@ export class RadiusService {
   }): Promise<{ code: number }> {
     const nas = await this.nasRepo.findOne({ where: { ipAddress: data.nas_ip } });
 
+    let tenantId = nas?.tenantId;
+    if (!tenantId) {
+      const subscriber = await this.subscriberRepo.findOne({ where: { username: data.username } });
+      tenantId = subscriber?.tenantId;
+    }
+    if (!tenantId) {
+      this.logger.warn(`postAuth: cannot resolve tenantId for user=${data.username} nas_ip=${data.nas_ip}, skipping log`);
+      return { code: 200 };
+    }
+
     const record = this.radpostauthRepo.create({
       username: data.username,
       pass: data.password ? '***' : null,
@@ -441,7 +462,7 @@ export class RadiusService {
       nasIp: data.nas_ip,
       nasId: nas?.id || null,
       callingStation: data.calling_station,
-      tenantId: nas?.tenantId,
+      tenantId,
       authDate: new Date(),
     } as DeepPartial<Radpostauth>);
 

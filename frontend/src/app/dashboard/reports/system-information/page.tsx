@@ -34,10 +34,10 @@ export default function SystemInformationPage() {
     { label: 'Platform', value: 'NestJS + Next.js' },
     { label: 'Database', value: 'PostgreSQL' },
     { label: 'RADIUS Protocol', value: 'FreeRADIUS compatible' },
-    { label: 'Total Subscribers', value: info?.total ?? '—' },
-    { label: 'Active Subscribers', value: info?.active ?? '—' },
-    { label: 'Disabled Subscribers', value: info?.disabled ?? '—' },
-    { label: 'Expired Subscribers', value: info?.expired ?? '—' },
+    { label: 'Total Customers', value: info?.total ?? '—' },
+    { label: 'Active Customers', value: info?.active ?? '—' },
+    { label: 'Disabled Customers', value: info?.disabled ?? '—' },
+    { label: 'Expired Customers', value: info?.expired ?? '—' },
     { label: 'Online Sessions', value: info?.online ?? '—' },
   ];
 

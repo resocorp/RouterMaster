@@ -65,7 +65,7 @@ export class SubscribersService {
     if (exists) throw new ConflictException('Username already exists');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const data: any = { ...dto, tenantId, passwordHash };
+    const data: any = { ...dto, tenantId, passwordHash, passwordPlain: dto.password };
     delete data.password;
     const subscriber = this.repo.create(data as DeepPartial<Subscriber>);
 
@@ -91,6 +91,7 @@ export class SubscribersService {
     const sub = await this.findOne(id, tenantId);
     if (dto.password) {
       (dto as any).passwordHash = await bcrypt.hash(dto.password, 10);
+      (dto as any).passwordPlain = dto.password;
       delete dto.password;
     }
     Object.assign(sub, dto);

@@ -44,8 +44,8 @@ export default function SystemStatisticsPage() {
   }
 
   const cards = [
-    { label: 'Total Subscribers', value: stats?.totalSubscribers ?? 0, color: 'bg-blue-50 border-blue-200' },
-    { label: 'Active Subscribers', value: stats?.activeSubscribers ?? 0, color: 'bg-green-50 border-green-200' },
+    { label: 'Total Customers', value: stats?.totalSubscribers ?? 0, color: 'bg-blue-50 border-blue-200' },
+    { label: 'Active Customers', value: stats?.activeSubscribers ?? 0, color: 'bg-green-50 border-green-200' },
     { label: 'Online Sessions', value: stats?.onlineSessions ?? 0, color: 'bg-purple-50 border-purple-200' },
     { label: 'NAS Devices', value: stats?.totalNas ?? 0, color: 'bg-indigo-50 border-indigo-200' },
     { label: 'User Groups', value: stats?.totalGroups ?? 0, color: 'bg-cyan-50 border-cyan-200' },
@@ -97,11 +97,11 @@ export default function SystemStatisticsPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             <tr className="hover:bg-gray-50">
-              <td className="px-6 py-3 font-medium text-gray-700">Total subscribers</td>
+              <td className="px-6 py-3 font-medium text-gray-700">Total customers</td>
               <td className="px-6 py-3">{stats?.totalSubscribers}</td>
             </tr>
             <tr className="hover:bg-gray-50">
-              <td className="px-6 py-3 font-medium text-gray-700">Active subscribers</td>
+              <td className="px-6 py-3 font-medium text-gray-700">Active customers</td>
               <td className="px-6 py-3">{stats?.activeSubscribers}</td>
             </tr>
             <tr className="hover:bg-gray-50">

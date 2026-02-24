@@ -96,6 +96,8 @@ export default function EditSubscriberPage() {
 
   const initialData: Partial<SubscriberFormData> = {
     username: subscriber.username,
+    password: subscriber.passwordPlain || '',
+    confirmPassword: subscriber.passwordPlain || '',
     enabled: subscriber.enabled,
     verified: subscriber.verified ?? false,
     emailAlerts: subscriber.emailAlerts ?? true,

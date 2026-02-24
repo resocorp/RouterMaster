@@ -34,7 +34,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <StatCard label="Total Subscribers" value={s.total} color="text-gray-900" />
+        <StatCard label="Total Customers" value={s.total} color="text-gray-900" />
         <StatCard label="Active" value={s.active} color="text-green-600" />
         <StatCard label="Online Now" value={s.online} color="text-blue-600" />
         <StatCard label="Expired" value={s.expired} color="text-orange-600" />

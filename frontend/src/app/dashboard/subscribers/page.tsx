@@ -39,7 +39,7 @@ export default function SubscribersPage() {
 
   return (
     <div>
-      <PageHeader title="Subscribers" action={
+      <PageHeader title="Customers" action={
         <div className="flex gap-3">
           <input
             type="text"
@@ -65,12 +65,12 @@ export default function SubscribersPage() {
         columns={columns}
         data={data}
         loading={loading}
-        emptyMessage="No subscribers found"
+        emptyMessage="No customers found"
         onRowClick={(s) => router.push(`/dashboard/subscribers/${s.id}`)}
       />
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>{total} total subscribers</span>
+          <span>{total} total customers</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => load(page - 1, search)} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
             <span className="px-3 py-1">Page {page} of {totalPages}</span>
