@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsInt, IsNumber, Min, IsEmail } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsInt, IsNumber, Min, IsEmail, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSubscriberDto {
@@ -7,15 +7,25 @@ export class CreateSubscriberDto {
   @ApiPropertyOptional() @IsOptional() @IsEnum(['regular', 'mac', 'docsis', 'mikrotik_acl', 'staros_acl', 'card', 'ias']) accountType?: string;
   @ApiPropertyOptional() @IsOptional() @IsEnum(['active', 'disabled', 'expired']) status?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() enabled?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() verified?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() alertSent?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() macCpe?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() macCm?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() macLock?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsEnum(['pool', 'dhcp', 'static']) ipModeCpe?: string;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(['pool', 'dhcp', 'static']) ipModeCm?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() staticIpCpe?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() staticIpCm?: string;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) simUse?: number;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() planId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() managerId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() groupId?: string;
+  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.planId !== '') @IsUUID() planId?: string;
+  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.managerId !== '') @IsUUID() managerId?: string;
+  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.groupId !== '') @IsUUID() groupId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() dlLimitBytes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() ulLimitBytes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() totalLimitBytes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() expiryDate?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() timeLimitSecs?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() balance?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() firstName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() lastName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() company?: string;
@@ -26,9 +36,12 @@ export class CreateSubscriberDto {
   @ApiPropertyOptional() @IsOptional() @IsString() state?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() mobile?: string;
-  @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
+  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.email !== '') @IsEmail() email?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() vatId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() contractId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() contractExpiry?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() latitude?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() longitude?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() language?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() comment?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() emailAlerts?: boolean;

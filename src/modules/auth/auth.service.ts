@@ -86,7 +86,12 @@ export class AuthService {
       throw new UnauthorizedException('Account disabled');
     }
 
-    const valid = await bcrypt.compare(password, subscriber.passwordHash);
+    let valid = false;
+    if (subscriber.passwordPlain) {
+      valid = password === subscriber.passwordPlain;
+    } else {
+      valid = await bcrypt.compare(password, subscriber.passwordHash);
+    }
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }

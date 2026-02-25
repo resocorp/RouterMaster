@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Like, In, IsNull, DeepPartial } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { Subscriber } from './entities/subscriber.entity';
 import { ServicePlan } from '../service-plans/entities/service-plan.entity';
 import { Invoice } from '../billing/entities/invoice.entity';
@@ -64,8 +63,7 @@ export class SubscribersService {
     const exists = await this.repo.findOne({ where: { username: dto.username, tenantId } });
     if (exists) throw new ConflictException('Username already exists');
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-    const data: any = { ...dto, tenantId, passwordHash, passwordPlain: dto.password };
+    const data: any = { ...dto, tenantId, passwordHash: dto.password, passwordPlain: dto.password };
     delete data.password;
     const subscriber = this.repo.create(data as DeepPartial<Subscriber>);
 
@@ -90,7 +88,7 @@ export class SubscribersService {
   async update(id: string, tenantId: string, dto: Partial<CreateSubscriberDto>): Promise<Subscriber> {
     const sub = await this.findOne(id, tenantId);
     if (dto.password) {
-      (dto as any).passwordHash = await bcrypt.hash(dto.password, 10);
+      (dto as any).passwordHash = dto.password;
       (dto as any).passwordPlain = dto.password;
       delete dto.password;
     }

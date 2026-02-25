@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { SubscribersService } from './subscribers.service';
 import { Subscriber } from './entities/subscriber.entity';
 import { ServicePlan } from '../service-plans/entities/service-plan.entity';
@@ -155,7 +154,7 @@ describe('SubscribersService', () => {
       expect(repo.save).toHaveBeenCalled();
     });
 
-    it('should hash password if provided in update', async () => {
+    it('should store plaintext password if provided in update', async () => {
       const sub = { ...mockSubscriber };
       repo.findOne.mockResolvedValue(sub);
       repo.save.mockResolvedValue(sub);
@@ -163,9 +162,8 @@ describe('SubscribersService', () => {
       await service.update('sub-1', 'tenant-1', { password: 'newpassword' } as any);
 
       const savedArg = repo.save.mock.calls[0][0];
-      expect(savedArg.passwordHash).toBeDefined();
-      const valid = await bcrypt.compare('newpassword', savedArg.passwordHash);
-      expect(valid).toBe(true);
+      expect(savedArg.passwordHash).toBe('newpassword');
+      expect(savedArg.passwordPlain).toBe('newpassword');
     });
   });
 

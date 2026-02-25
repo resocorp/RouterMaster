@@ -52,9 +52,10 @@ export class PortalService {
     if (!sub) throw new NotFoundException('User not found');
     const settings = await this.settingsRepo.findOne({ where: { tenantId } });
     if (!settings?.ucpChangePassword) throw new BadRequestException('Password change disabled');
-    const valid = await bcrypt.compare(oldPassword, sub.passwordHash);
+    const valid = sub.passwordPlain ? (oldPassword === sub.passwordPlain) : await bcrypt.compare(oldPassword, sub.passwordHash);
     if (!valid) throw new BadRequestException('Current password is incorrect');
-    sub.passwordHash = await bcrypt.hash(newPassword, 10);
+    sub.passwordHash = newPassword;
+    sub.passwordPlain = newPassword;
     await this.subRepo.save(sub);
     return { success: true };
   }
