@@ -9,6 +9,7 @@ import { Radacct } from './entities/radacct.entity';
 import { Radpostauth } from './entities/radpostauth.entity';
 import { SpecialAccounting } from '../service-plans/entities/special-accounting.entity';
 import { RadiusReplyBuilder, RadiusReplyAttributes } from './radius-reply.builder';
+import { RadiusLogService } from './radius-log.service';
 
 @Injectable()
 export class RadiusService {
@@ -29,6 +30,7 @@ export class RadiusService {
     private readonly planRepo: Repository<ServicePlan>,
     private readonly replyBuilder: RadiusReplyBuilder,
     private readonly dataSource: DataSource,
+    private readonly radiusLog: RadiusLogService,
   ) {}
 
   async authorize(data: {
@@ -39,19 +41,54 @@ export class RadiusService {
     calling_station?: string;
     called_station?: string;
   }): Promise<{ code: number; attributes: RadiusReplyAttributes }> {
+    this.radiusLog.emit({
+      type: 'authorize',
+      level: 'info',
+      username: data.username,
+      nasIp: data.nas_ip,
+      callingStation: data.calling_station,
+      result: 'info',
+      message: `Authorize request: user="${data.username}" nas_ip=${data.nas_ip} calling_station=${data.calling_station || 'N/A'}`,
+    });
+
     const nas = await this.nasRepo.findOne({
       where: { ipAddress: data.nas_ip },
     });
     if (!nas) {
       this.logger.warn(`Unknown NAS: ${data.nas_ip}`);
+      this.radiusLog.emit({
+        type: 'authorize',
+        level: 'error',
+        username: data.username,
+        nasIp: data.nas_ip,
+        result: 'reject',
+        message: `REJECT: Unknown NAS IP "${data.nas_ip}". No NAS device registered with this IP address.`,
+      });
       return { code: 403, attributes: { 'Reply-Message': 'Unknown NAS' } };
     }
+
+    this.radiusLog.emit({
+      type: 'authorize',
+      level: 'debug',
+      username: data.username,
+      nasIp: data.nas_ip,
+      result: 'info',
+      message: `NAS resolved: "${nas.name}" (type=${nas.type}, tenant=${nas.tenantId})`,
+    });
 
     const subscriber = await this.subscriberRepo.findOne({
       where: { username: data.username, tenantId: nas.tenantId },
       relations: ['plan'],
     });
     if (!subscriber) {
+      this.radiusLog.emit({
+        type: 'authorize',
+        level: 'error',
+        username: data.username,
+        nasIp: data.nas_ip,
+        result: 'reject',
+        message: `REJECT: User "${data.username}" not found in tenant ${nas.tenantId}`,
+      });
       return { code: 403, attributes: { 'Reply-Message': 'User not found' } };
     }
 
@@ -179,6 +216,17 @@ export class RadiusService {
       attributes['Cleartext-Password'] = subscriber.passwordPlain;
     }
 
+    this.radiusLog.emit({
+      type: 'authorize',
+      level: 'info',
+      username: data.username,
+      nasIp: data.nas_ip,
+      callingStation: data.calling_station,
+      result: 'accept',
+      message: `ACCEPT: Authorize OK for "${data.username}", plan="${plan.name}", hasPlainPwd=${!!subscriber.passwordPlain}`,
+      details: { planName: plan.name, attributeCount: Object.keys(attributes).length },
+    });
+
     return { code: 200, attributes };
   }
 
@@ -188,6 +236,16 @@ export class RadiusService {
     nas_ip: string;
     calling_station?: string;
   }): Promise<{ code: number; attributes: RadiusReplyAttributes }> {
+    this.radiusLog.emit({
+      type: 'authenticate',
+      level: 'info',
+      username: data.username,
+      nasIp: data.nas_ip,
+      callingStation: data.calling_station,
+      result: 'info',
+      message: `Authenticate request: user="${data.username}" nas_ip=${data.nas_ip} pwd_length=${data.password?.length || 0}`,
+    });
+
     const nas = await this.nasRepo.findOne({
       where: { ipAddress: data.nas_ip },
     });
@@ -201,18 +259,48 @@ export class RadiusService {
       where: whereClause,
     });
     if (!subscriber) {
+      this.radiusLog.emit({
+        type: 'authenticate',
+        level: 'error',
+        username: data.username,
+        nasIp: data.nas_ip,
+        result: 'reject',
+        message: `REJECT AUTH: User "${data.username}" not found (nas_tenant=${nas?.tenantId || 'unknown'})`,
+      });
       return { code: 403, attributes: { 'Reply-Message': 'User not found' } };
     }
 
     let valid = false;
+    let method = 'none';
     if (subscriber.passwordPlain) {
       valid = data.password === subscriber.passwordPlain;
+      method = 'plaintext';
     } else {
       valid = await bcrypt.compare(data.password, subscriber.passwordHash);
+      method = 'bcrypt';
     }
     if (!valid) {
+      this.radiusLog.emit({
+        type: 'authenticate',
+        level: 'error',
+        username: data.username,
+        nasIp: data.nas_ip,
+        callingStation: data.calling_station,
+        result: 'reject',
+        message: `REJECT AUTH: Invalid password for "${data.username}" (method=${method}, pwd_length_sent=${data.password?.length || 0}, stored_plain_length=${subscriber.passwordPlain?.length || 0})`,
+      });
       return { code: 403, attributes: { 'Reply-Message': 'Invalid password' } };
     }
+
+    this.radiusLog.emit({
+      type: 'authenticate',
+      level: 'info',
+      username: data.username,
+      nasIp: data.nas_ip,
+      callingStation: data.calling_station,
+      result: 'accept',
+      message: `ACCEPT AUTH: "${data.username}" authenticated via ${method}`,
+    });
 
     return { code: 200, attributes: {} };
   }
@@ -236,6 +324,15 @@ export class RadiusService {
     terminate_cause?: string;
   }): Promise<{ code: number }> {
     const statusType = (data.status_type || '').toLowerCase().replace(/[-\s]/g, '');
+
+    this.radiusLog.emit({
+      type: 'accounting',
+      level: 'debug',
+      username: data.username,
+      nasIp: data.nas_ip,
+      result: 'info',
+      message: `Accounting ${data.status_type}: user="${data.username}" session=${data.session_id}`,
+    });
 
     switch (statusType) {
       case 'start':
@@ -484,6 +581,17 @@ export class RadiusService {
     } as DeepPartial<Radpostauth>);
 
     await this.radpostauthRepo.save(record);
+
+    this.radiusLog.emit({
+      type: 'post-auth',
+      level: data.reply === 'Access-Accept' ? 'info' : 'warn',
+      username: data.username,
+      nasIp: data.nas_ip,
+      callingStation: data.calling_station,
+      result: data.reply === 'Access-Accept' ? 'accept' : 'reject',
+      message: `Post-Auth: user="${data.username}" reply=${data.reply} nas_ip=${data.nas_ip}`,
+    });
+
     return { code: 200 };
   }
 }
