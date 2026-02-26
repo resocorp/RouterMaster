@@ -48,7 +48,7 @@ export class RadiusService {
     }
 
     const subscriber = await this.subscriberRepo.findOne({
-      where: { username: data.username },
+      where: { username: data.username, tenantId: nas.tenantId },
       relations: ['plan'],
     });
     if (!subscriber) {
@@ -188,8 +188,17 @@ export class RadiusService {
     nas_ip: string;
     calling_station?: string;
   }): Promise<{ code: number; attributes: RadiusReplyAttributes }> {
+    const nas = await this.nasRepo.findOne({
+      where: { ipAddress: data.nas_ip },
+    });
+
+    const whereClause: any = { username: data.username };
+    if (nas) {
+      whereClause.tenantId = nas.tenantId;
+    }
+
     const subscriber = await this.subscriberRepo.findOne({
-      where: { username: data.username },
+      where: whereClause,
     });
     if (!subscriber) {
       return { code: 403, attributes: { 'Reply-Message': 'User not found' } };
@@ -250,8 +259,12 @@ export class RadiusService {
   }
 
   private async handleAcctStart(data: any): Promise<void> {
-    const subscriber = await this.subscriberRepo.findOne({ where: { username: data.username } });
     const nas = await this.nasRepo.findOne({ where: { ipAddress: data.nas_ip } });
+    const subscriberWhere: any = { username: data.username };
+    if (nas) {
+      subscriberWhere.tenantId = nas.tenantId;
+    }
+    const subscriber = await this.subscriberRepo.findOne({ where: subscriberWhere });
 
     const record = this.radacctRepo.create({
       sessionId: data.session_id,
@@ -383,8 +396,12 @@ export class RadiusService {
     sessionTime: number,
     session: Radacct,
   ): Promise<void> {
+    const subscriberWhere: any = { username };
+    if (session.tenantId) {
+      subscriberWhere.tenantId = session.tenantId;
+    }
     const subscriber = await this.subscriberRepo.findOne({
-      where: { username },
+      where: subscriberWhere,
       relations: ['plan'],
     });
     if (!subscriber || !subscriber.plan) return;

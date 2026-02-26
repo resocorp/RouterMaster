@@ -97,10 +97,10 @@ async function seed() {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
     await qr.query(`
-      INSERT INTO subscribers (id, tenant_id, username, password_hash, account_type, status, enabled,
+      INSERT INTO subscribers (id, tenant_id, username, password_hash, password_plain, account_type, status, enabled,
         plan_id, sim_use, first_name, last_name, email,
         dl_limit_bytes, ul_limit_bytes, total_limit_bytes, time_limit_secs, expiry_date)
-      VALUES ($1, $2, 'testuser', $3, 'regular', 'active', true,
+      VALUES ($1, $2, 'testuser', $3, 'test123', 'regular', 'active', true,
         $4, 1, 'Test', 'User', 'test@example.com',
         0, 0, 0, 0, $5)
     `, [subId, tenantId, subPasswordHash, planId, expiryDate.toISOString()]);

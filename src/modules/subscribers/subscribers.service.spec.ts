@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { SubscribersService } from './subscribers.service';
 import { Subscriber } from './entities/subscriber.entity';
 import { ServicePlan } from '../service-plans/entities/service-plan.entity';
@@ -44,7 +45,7 @@ const mockPlan = {
   initialDlMb: 0, initialUlMb: 0, initialTotalMb: 0, initialTimeSecs: 0,
   initialExpiryVal: 30, expiryUnit: 'days',
   dlTrafficUnitMb: 0, ulTrafficUnitMb: 0, totalTrafficUnitMb: 0,
-  trafficAddMode: 'add', dateAddMode: 'prolong', timeAddMode: 'add', timeUnit: 'hours',
+  trafficAddMode: 'additive', dateAddMode: 'prolong', timeAddMode: 'prolong', timeUnit: 'hours',
   grossUnitPrice: 9.99, netUnitPrice: 9.99,
 };
 
@@ -114,7 +115,7 @@ describe('SubscribersService', () => {
       } as any)).rejects.toThrow(ConflictException);
     });
 
-    it('should create subscriber with hashed password', async () => {
+    it('should create subscriber with bcrypt-hashed password and plaintext copy', async () => {
       repo.findOne.mockResolvedValue(null);
       planRepo.findOne.mockResolvedValue(null);
       const newSub = { ...mockSubscriber, id: 'sub-new' };
@@ -127,6 +128,13 @@ describe('SubscribersService', () => {
 
       expect(repo.save).toHaveBeenCalled();
       expect(result.id).toBe('sub-new');
+
+      const createArg = repo.create.mock.calls[0][0];
+      expect(createArg.passwordPlain).toBe('secret123');
+      expect(createArg.passwordHash).not.toBe('secret123');
+      const isHash = await bcrypt.compare('secret123', createArg.passwordHash);
+      expect(isHash).toBe(true);
+      expect(createArg.password).toBeUndefined();
     });
 
     it('should set expiry date when plan has capExpiry', async () => {
@@ -154,7 +162,7 @@ describe('SubscribersService', () => {
       expect(repo.save).toHaveBeenCalled();
     });
 
-    it('should store plaintext password if provided in update', async () => {
+    it('should store bcrypt-hashed password and plaintext copy on update', async () => {
       const sub = { ...mockSubscriber };
       repo.findOne.mockResolvedValue(sub);
       repo.save.mockResolvedValue(sub);
@@ -162,8 +170,10 @@ describe('SubscribersService', () => {
       await service.update('sub-1', 'tenant-1', { password: 'newpassword' } as any);
 
       const savedArg = repo.save.mock.calls[0][0];
-      expect(savedArg.passwordHash).toBe('newpassword');
       expect(savedArg.passwordPlain).toBe('newpassword');
+      expect(savedArg.passwordHash).not.toBe('newpassword');
+      const isHash = await bcrypt.compare('newpassword', savedArg.passwordHash);
+      expect(isHash).toBe(true);
     });
   });
 

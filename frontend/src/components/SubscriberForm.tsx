@@ -193,9 +193,6 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
       if (!form.password || form.password.length < 4 || form.password.length > 32) {
         errs.password = 'Password must be 4-32 characters';
       }
-      if (form.password !== form.confirmPassword) {
-        errs.confirmPassword = 'Passwords do not match';
-      }
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -229,7 +226,6 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
   const handleGeneratePassword = () => {
     const pwd = generatePassword();
     set('password', pwd);
-    set('confirmPassword', pwd);
     setShowPassword(true);
   };
 
@@ -377,23 +373,6 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
                   </button>
                 </div>
                 {errors.password && <p className={errorClass}>{errors.password}</p>}
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label className={labelClass}>
-                  <span className="text-red-500">*</span> Confirm password
-                  <span className="text-xs text-gray-400 ml-1">(4-32 characters)</span>
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.confirmPassword}
-                  onChange={(e) => set('confirmPassword', e.target.value)}
-                  minLength={4}
-                  maxLength={32}
-                  className={cn(inputClass, errors.confirmPassword && 'border-red-300 focus:ring-red-500')}
-                />
-                {errors.confirmPassword && <p className={errorClass}>{errors.confirmPassword}</p>}
               </div>
 
               {/* Show password + Generate */}

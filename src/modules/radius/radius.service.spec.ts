@@ -177,6 +177,7 @@ describe('RadiusService', () => {
 
   describe('authenticate', () => {
     it('should return 403 for unknown user', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
       subscriberRepo.findOne.mockResolvedValue(null);
       const result = await service.authenticate({
         username: 'nobody', password: 'pass', nas_ip: '10.0.0.1',
@@ -185,6 +186,7 @@ describe('RadiusService', () => {
     });
 
     it('should return 403 for wrong password (plaintext)', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
       subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'correct' });
       const result = await service.authenticate({
         username: 'testuser', password: 'wrong', nas_ip: '10.0.0.1',
@@ -193,6 +195,7 @@ describe('RadiusService', () => {
     });
 
     it('should return 200 for correct plaintext password', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
       subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'test123' });
       const result = await service.authenticate({
         username: 'testuser', password: 'test123', nas_ip: '10.0.0.1',
@@ -203,19 +206,42 @@ describe('RadiusService', () => {
     it('should return 200 for correct password via bcrypt fallback', async () => {
       const bcrypt = require('bcrypt');
       const hash = await bcrypt.hash('test123', 10);
+      nasRepo.findOne.mockResolvedValue(mockNas);
       subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: null, passwordHash: hash });
       const result = await service.authenticate({
         username: 'testuser', password: 'test123', nas_ip: '10.0.0.1',
       });
       expect(result.code).toBe(200);
     });
+
+    it('should tenant-scope subscriber lookup using NAS', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'test123' });
+      await service.authenticate({
+        username: 'testuser', password: 'test123', nas_ip: '10.0.0.1',
+      });
+      expect(subscriberRepo.findOne).toHaveBeenCalledWith({
+        where: { username: 'testuser', tenantId: 'tenant-1' },
+      });
+    });
+
+    it('should still work when NAS is unknown (no tenant filter)', async () => {
+      nasRepo.findOne.mockResolvedValue(null);
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'test123' });
+      const result = await service.authenticate({
+        username: 'testuser', password: 'test123', nas_ip: '9.9.9.9',
+      });
+      expect(result.code).toBe(200);
+      expect(subscriberRepo.findOne).toHaveBeenCalledWith({
+        where: { username: 'testuser' },
+      });
+    });
   });
 
   describe('accounting', () => {
-    it('should return 200 for any accounting status', async () => {
-      radacctRepo.findOne.mockResolvedValue(null);
-      subscriberRepo.findOne.mockResolvedValue(mockSubscriber);
+    it('should return 200 for Start and create radacct record', async () => {
       nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue(mockSubscriber);
       radacctRepo.create.mockReturnValue({});
       radacctRepo.save.mockResolvedValue({});
 
@@ -224,6 +250,7 @@ describe('RadiusService', () => {
         username: 'testuser', nas_ip: '10.0.0.1',
       });
       expect(result.code).toBe(200);
+      expect(radacctRepo.save).toHaveBeenCalled();
     });
 
     it('should handle accounting-on/off by closing open sessions', async () => {
@@ -233,6 +260,50 @@ describe('RadiusService', () => {
         username: '', nas_ip: '10.0.0.1',
       });
       expect(result.code).toBe(200);
+      expect(radacctRepo.update).toHaveBeenCalled();
+    });
+
+    it('should handle Interim-Update for existing session', async () => {
+      const mockSession = {
+        id: '1', sessionId: 'sess-001', tenantId: 'tenant-1',
+        inputOctets: '1000', outputOctets: '2000',
+        inputGigawords: 0, outputGigawords: 0,
+        framedIp: '192.168.1.10',
+      };
+      radacctRepo.findOne.mockResolvedValue(mockSession);
+      radacctRepo.update.mockResolvedValue({});
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, plan: { ...mockPlan, capDownload: false } });
+      specialAcctRepo.find.mockResolvedValue([]);
+
+      const result = await service.accounting({
+        status_type: 'Interim-Update', session_id: 'sess-001',
+        username: 'testuser', nas_ip: '10.0.0.1',
+        input_octets: '5000', output_octets: '10000',
+        session_time: '120',
+      });
+      expect(result.code).toBe(200);
+      expect(radacctRepo.update).toHaveBeenCalled();
+    });
+
+    it('should handle Stop for existing session', async () => {
+      const mockSession = {
+        id: '1', sessionId: 'sess-002', tenantId: 'tenant-1',
+        inputOctets: '0', outputOctets: '0',
+        inputGigawords: 0, outputGigawords: 0,
+      };
+      radacctRepo.findOne.mockResolvedValue(mockSession);
+      radacctRepo.update.mockResolvedValue({});
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, plan: { ...mockPlan, capDownload: false } });
+      specialAcctRepo.find.mockResolvedValue([]);
+
+      const result = await service.accounting({
+        status_type: 'Stop', session_id: 'sess-002',
+        username: 'testuser', nas_ip: '10.0.0.1',
+        input_octets: '100000', output_octets: '200000',
+        session_time: '600', terminate_cause: 'User-Request',
+      });
+      expect(result.code).toBe(200);
+      expect(radacctRepo.update).toHaveBeenCalled();
     });
   });
 
@@ -247,6 +318,165 @@ describe('RadiusService', () => {
       });
       expect(result.code).toBe(200);
       expect(radpostauthRepo.save).toHaveBeenCalled();
+    });
+
+    it('should resolve tenantId from subscriber when NAS is unknown', async () => {
+      nasRepo.findOne.mockResolvedValue(null);
+      subscriberRepo.findOne.mockResolvedValue(mockSubscriber);
+      radpostauthRepo.create.mockReturnValue({});
+      radpostauthRepo.save.mockResolvedValue({});
+
+      const result = await service.postAuth({
+        username: 'testuser', reply: 'Access-Reject', nas_ip: '9.9.9.9',
+      });
+      expect(result.code).toBe(200);
+      expect(radpostauthRepo.save).toHaveBeenCalled();
+    });
+
+    it('should skip log when tenantId cannot be resolved', async () => {
+      nasRepo.findOne.mockResolvedValue(null);
+      subscriberRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.postAuth({
+        username: 'unknown', reply: 'Access-Reject', nas_ip: '9.9.9.9',
+      });
+      expect(result.code).toBe(200);
+      expect(radpostauthRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('authorize - tenant scoping', () => {
+    it('should scope subscriber lookup by NAS tenantId', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue(mockSubscriber);
+      subscriberRepo.update.mockResolvedValue({});
+      radacctRepo.count.mockResolvedValue(0);
+      specialAcctRepo.find.mockResolvedValue([]);
+      replyBuilder.build.mockReturnValue({ 'Mikrotik-Rate-Limit': '10M/5M' });
+
+      await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(subscriberRepo.findOne).toHaveBeenCalledWith({
+        where: { username: 'testuser', tenantId: 'tenant-1' },
+        relations: ['plan'],
+      });
+    });
+
+    it('should include Cleartext-Password when passwordPlain is set', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: 'secret123' });
+      subscriberRepo.update.mockResolvedValue({});
+      radacctRepo.count.mockResolvedValue(0);
+      specialAcctRepo.find.mockResolvedValue([]);
+      replyBuilder.build.mockReturnValue({ 'Mikrotik-Rate-Limit': '10M/5M' });
+
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(200);
+      expect(result.attributes['Cleartext-Password']).toBe('secret123');
+    });
+
+    it('should NOT include Cleartext-Password when passwordPlain is null', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, passwordPlain: null });
+      subscriberRepo.update.mockResolvedValue({});
+      radacctRepo.count.mockResolvedValue(0);
+      specialAcctRepo.find.mockResolvedValue([]);
+      replyBuilder.build.mockReturnValue({ 'Mikrotik-Rate-Limit': '10M/5M' });
+
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(200);
+      expect(result.attributes['Cleartext-Password']).toBeUndefined();
+    });
+
+    it('should reject when download limit exceeded', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({
+        ...mockSubscriber,
+        dlLimitBytes: '0',
+        plan: { ...mockPlan, capDownload: true, nextExpiredId: null },
+      });
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(403);
+      expect(result.attributes['Reply-Message']).toContain('Download limit');
+    });
+
+    it('should reject when upload limit exceeded', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({
+        ...mockSubscriber,
+        ulLimitBytes: '0',
+        plan: { ...mockPlan, capUpload: true },
+      });
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(403);
+      expect(result.attributes['Reply-Message']).toContain('Upload limit');
+    });
+
+    it('should reject when total traffic limit exceeded', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({
+        ...mockSubscriber,
+        totalLimitBytes: '0',
+        plan: { ...mockPlan, capTotal: true },
+      });
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(403);
+      expect(result.attributes['Reply-Message']).toContain('Total traffic limit');
+    });
+
+    it('should reject when time limit exceeded', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({
+        ...mockSubscriber,
+        timeLimitSecs: 0,
+        plan: { ...mockPlan, capTime: true },
+      });
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(403);
+      expect(result.attributes['Reply-Message']).toContain('Time limit');
+    });
+
+    it('should reject subscriber with no plan', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({ ...mockSubscriber, plan: null });
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+      });
+      expect(result.code).toBe(403);
+      expect(result.attributes['Reply-Message']).toContain('No service plan');
+    });
+
+    it('should lock MAC when macLock enabled and no stored MAC', async () => {
+      nasRepo.findOne.mockResolvedValue(mockNas);
+      subscriberRepo.findOne.mockResolvedValue({
+        ...mockSubscriber, macLock: true, macCpe: null, simUse: 0,
+      });
+      subscriberRepo.update.mockResolvedValue({});
+      specialAcctRepo.find.mockResolvedValue([]);
+      replyBuilder.build.mockReturnValue({ 'Mikrotik-Rate-Limit': '10M/5M' });
+
+      const result = await service.authorize({
+        username: 'testuser', password: 'pass', nas_ip: '10.0.0.1',
+        calling_station: 'AA:BB:CC:DD:EE:FF',
+      });
+      expect(result.code).toBe(200);
+      expect(subscriberRepo.update).toHaveBeenCalledWith(
+        mockSubscriber.id,
+        expect.objectContaining({ macCpe: 'AA:BB:CC:DD:EE:FF' }),
+      );
     });
   });
 });

@@ -173,7 +173,7 @@ export class AuthService {
         relations: ['plan', 'group'],
       });
       if (!subscriber) throw new UnauthorizedException('User not found');
-      const { passwordHash, ...result } = subscriber;
+      const { passwordHash, passwordPlain, ...result } = subscriber;
       return result;
     } else {
       const manager = await this.managerRepo.findOne({

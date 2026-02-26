@@ -133,6 +133,40 @@ describe('AuthService', () => {
     });
   });
 
+  describe('getProfile', () => {
+    it('should strip passwordHash and passwordPlain from subscriber profile', async () => {
+      subscriberRepo.findOne.mockResolvedValue({
+        id: 'sub-1', username: 'testuser', tenantId: 'tenant-1',
+        passwordHash: '$2b$10$hash', passwordPlain: 'secret123',
+        firstName: 'Test', lastName: 'User', email: 'test@example.com',
+        plan: { name: '10Mbps' },
+      });
+
+      const result = await service.getProfile({
+        sub: 'sub-1', username: 'testuser', role: 'subscriber', tenantId: 'tenant-1',
+      });
+
+      expect(result).not.toHaveProperty('passwordHash');
+      expect(result).not.toHaveProperty('passwordPlain');
+      expect(result).toHaveProperty('username', 'testuser');
+    });
+
+    it('should strip passwordHash from manager profile', async () => {
+      managerRepo.findOne.mockResolvedValue({
+        id: 'mgr-1', username: 'admin', tenantId: 'tenant-1',
+        passwordHash: '$2b$10$hash',
+        firstName: 'Super', lastName: 'Admin',
+      });
+
+      const result = await service.getProfile({
+        sub: 'mgr-1', username: 'admin', role: 'admin', tenantId: 'tenant-1',
+      });
+
+      expect(result).not.toHaveProperty('passwordHash');
+      expect(result).toHaveProperty('username', 'admin');
+    });
+  });
+
   describe('refreshToken', () => {
     it('should throw for invalid refresh token type', async () => {
       jwtService.verify.mockReturnValue({ sub: 'mgr-1', type: 'access', role: 'admin', tenantId: 't1' });

@@ -58,12 +58,14 @@ export default function EditSubscriberPage() {
     if (longitude) payload.longitude = parseFloat(longitude);
     if (!payload.planId) delete payload.planId;
     if (!payload.groupId) delete payload.groupId;
+    if (!payload.managerId) delete payload.managerId;
     if (!payload.macCm) delete payload.macCm;
     if (!payload.macCpe) delete payload.macCpe;
     if (!payload.staticIpCpe) delete payload.staticIpCpe;
     if (!payload.staticIpCm) delete payload.staticIpCm;
     if (!payload.contractId) delete payload.contractId;
     if (!payload.contractExpiry) delete payload.contractExpiry;
+    if (!payload.email) delete payload.email;
 
     await api.put(`/subscribers/${id}`, payload);
     router.push('/dashboard/subscribers');
