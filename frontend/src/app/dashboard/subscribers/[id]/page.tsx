@@ -72,7 +72,7 @@ export default function EditSubscriberPage() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Disconnect this user from all active sessions?')) return;
+    if (!confirm('Disconnect this customer from all active sessions?')) return;
     try {
       await api.post(`/subscribers/${id}/disconnect`);
       alert('User disconnected');

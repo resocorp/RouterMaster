@@ -27,6 +27,7 @@ export default function NewSubscriberPage() {
       ...rest,
       timeLimitSecs: parseTimeLimitToSecs(timeLimitSecs),
       customAttrs: parseCustomAttrs(customAttrs),
+      balance: parseFloat(balance) || 0,
     };
     if (latitude) payload.latitude = parseFloat(latitude);
     if (longitude) payload.longitude = parseFloat(longitude);

@@ -57,7 +57,7 @@ export default function SubscribersPage() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Plus size={16} />
-            New User
+            New Customer
           </button>
         </div>
       } />

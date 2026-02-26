@@ -1,10 +1,10 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsInt, IsNumber, Min, IsEmail, ValidateIf } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsInt, IsNumber, Min, IsEmail, Matches, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSubscriberDto {
   @ApiProperty() @IsString() username: string;
   @ApiProperty() @IsString() password: string;
-  @ApiPropertyOptional() @IsOptional() @IsEnum(['regular', 'mac', 'docsis', 'mikrotik_acl', 'staros_acl', 'card', 'ias']) accountType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(['regular', 'mac', 'docsis', 'dhcp_ipoe', 'mikrotik_acl', 'staros_acl', 'card', 'ias']) accountType?: string;
   @ApiPropertyOptional() @IsOptional() @IsEnum(['active', 'disabled', 'expired']) status?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() enabled?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() verified?: boolean;
@@ -17,14 +17,14 @@ export class CreateSubscriberDto {
   @ApiPropertyOptional() @IsOptional() @IsString() staticIpCpe?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() staticIpCm?: string;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) simUse?: number;
-  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.planId !== '') @IsUUID() planId?: string;
-  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.managerId !== '') @IsUUID() managerId?: string;
-  @ApiPropertyOptional() @IsOptional() @ValidateIf(o => o.groupId !== '') @IsUUID() groupId?: string;
+  @ApiPropertyOptional() @IsOptional() @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, { message: 'planId must be a valid UUID format' }) planId?: string;
+  @ApiPropertyOptional() @IsOptional() @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, { message: 'managerId must be a valid UUID format' }) managerId?: string;
+  @ApiPropertyOptional() @IsOptional() @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, { message: 'groupId must be a valid UUID format' }) groupId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() dlLimitBytes?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() ulLimitBytes?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() totalLimitBytes?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() expiryDate?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() timeLimitSecs?: string;
+  @ApiPropertyOptional() @IsOptional() @IsInt() timeLimitSecs?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() balance?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() firstName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() lastName?: string;

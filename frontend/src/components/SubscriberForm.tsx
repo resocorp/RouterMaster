@@ -174,7 +174,13 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
   const [managers, setManagers] = useState<Manager[]>([]);
 
   useEffect(() => {
-    api.get<ServicePlan[]>('/service-plans').then(setServicePlans).catch(() => {});
+    api.get<ServicePlan[]>('/service-plans').then((plans) => {
+      setServicePlans(plans);
+      const enabled = plans.filter((p) => p.enabled);
+      if (!isEdit && enabled.length > 0 && !form.planId) {
+        set('planId', enabled[0].id);
+      }
+    }).catch(() => {});
     api.get<UserGroup[]>('/user-groups').then(setUserGroups).catch(() => {});
     api.get<Manager[]>('/managers').then(setManagers).catch(() => {});
   }, []);
@@ -212,7 +218,7 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm('Are you sure you want to delete this customer?')) return;
     setDeleting(true);
     try {
       await onDelete();
@@ -246,7 +252,7 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEdit ? 'Edit User' : 'New User'}
+            {isEdit ? 'Edit Customer' : 'New Customer'}
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -266,7 +272,7 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
             className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <Save size={16} />
-            {saving ? 'Saving...' : isEdit ? 'Update User' : 'Add User'}
+            {saving ? 'Saving...' : isEdit ? 'Update Customer' : 'Add Customer'}
           </button>
         </div>
       </div>
@@ -601,8 +607,7 @@ export default function SubscriberForm({ initialData, isEdit, subscriber, onSubm
               <div>
                 <label className={labelClass}>Service plan</label>
                 <select value={form.planId} onChange={(e) => set('planId', e.target.value)} className={inputClass}>
-                  <option value="">Select plan</option>
-                  {servicePlans.filter((p) => p.enabled).map((p) => (
+                                    {servicePlans.filter((p) => p.enabled).map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>

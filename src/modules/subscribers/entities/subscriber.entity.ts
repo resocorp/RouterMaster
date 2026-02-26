@@ -33,7 +33,7 @@ export class Subscriber {
   @Column({ name: 'password_plain', type: 'varchar', length: 255, nullable: true })
   passwordPlain: string;
 
-  @Column({ name: 'account_type', type: 'enum', enum: ['regular', 'mac', 'docsis', 'mikrotik_acl', 'staros_acl', 'card', 'ias'], default: 'regular' })
+  @Column({ name: 'account_type', type: 'enum', enum: ['regular', 'mac', 'docsis', 'dhcp_ipoe', 'mikrotik_acl', 'staros_acl', 'card', 'ias'], default: 'regular' })
   accountType: string;
 
   @Column({ type: 'enum', enum: ['active', 'disabled', 'expired'], default: 'active' })
