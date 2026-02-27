@@ -4,6 +4,7 @@ import { NasService } from './nas.service';
 import { CreateNasDto } from './dto/create-nas.dto';
 import { UpdateNasDto } from './dto/update-nas.dto';
 import { TestConnectionDto } from './dto/test-connection.dto';
+import { ExecuteCommandDto } from './dto/execute-command.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -30,6 +31,9 @@ export class NasController {
 
   @Post(':id/test-connection') @Permissions('edit_nas') @ApiOperation({ summary: 'Test MikroTik API connection for existing NAS device' })
   testConnection(@Param('id') id: string, @TenantId() tid: string) { return this.service.testConnectionById(id, tid); }
+
+  @Post(':id/command') @Permissions('edit_nas') @ApiOperation({ summary: 'Execute a RouterOS API command on a NAS device' })
+  executeCommand(@Param('id') id: string, @TenantId() tid: string, @Body() dto: ExecuteCommandDto) { return this.service.executeCommand(id, tid, dto); }
 
   @Post() @Permissions('register_nas') @ApiOperation({ summary: 'Create NAS device' })
   create(@TenantId() tid: string, @Body() dto: CreateNasDto) { return this.service.create(tid, dto); }

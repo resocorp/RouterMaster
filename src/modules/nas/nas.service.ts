@@ -2,8 +2,9 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NasDevice } from './entities/nas-device.entity';
-import { MikrotikApiService, MikrotikTestResult } from './mikrotik-api.service';
+import { MikrotikApiService, MikrotikTestResult, MikrotikCommandResult } from './mikrotik-api.service';
 import { TestConnectionDto } from './dto/test-connection.dto';
+import { ExecuteCommandDto } from './dto/execute-command.dto';
 
 @Injectable()
 export class NasService {
@@ -74,5 +75,23 @@ export class NasService {
       }),
     );
     return results;
+  }
+
+  async executeCommand(id: string, tenantId: string, dto: ExecuteCommandDto): Promise<MikrotikCommandResult> {
+    const nas = await this.findOne(id, tenantId);
+    if (nas.type !== 'mikrotik') {
+      throw new BadRequestException('Command execution is only supported for MikroTik devices');
+    }
+    if (!nas.apiUsername) {
+      throw new BadRequestException('API username is not configured for this NAS device');
+    }
+    return this.mikrotikApi.executeCommand(
+      nas.ipAddress,
+      nas.apiUsername,
+      nas.apiPassword || '',
+      dto.command,
+      dto.params || {},
+      nas.apiVersion || '6.45.1+',
+    );
   }
 }

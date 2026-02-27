@@ -10,6 +10,13 @@ export interface MikrotikTestResult {
   latencyMs?: number;
 }
 
+export interface MikrotikCommandResult {
+  success: boolean;
+  data: Record<string, string>[];
+  error?: string;
+  latencyMs: number;
+}
+
 @Injectable()
 export class MikrotikApiService {
   private readonly logger = new Logger(MikrotikApiService.name);
@@ -168,6 +175,174 @@ export class MikrotikApiService {
                 routerVersion: version,
                 latencyMs: Date.now() - startTime,
               });
+            }
+          }
+        }
+      });
+    });
+  }
+
+  async executeCommand(
+    ipAddress: string,
+    apiUsername: string,
+    apiPassword: string,
+    command: string,
+    params: Record<string, string> = {},
+    apiVersion: string = '6.45.1+',
+    timeoutMs: number = 10000,
+  ): Promise<MikrotikCommandResult> {
+    const startTime = Date.now();
+    const port = 8728;
+
+    return new Promise((resolve) => {
+      const client = new net.Socket();
+      let rxBuf: Buffer = Buffer.alloc(0);
+      let stage = apiVersion === '6.45.1+' ? 'direct-login' : 'challenge';
+      let resolved = false;
+      const rows: Record<string, string>[] = [];
+
+      const done = (result: MikrotikCommandResult) => {
+        if (resolved) return;
+        resolved = true;
+        client.destroy();
+        resolve(result);
+      };
+
+      const timer = setTimeout(() => {
+        done({
+          success: false,
+          data: rows,
+          error: `Command timed out after ${timeoutMs}ms`,
+          latencyMs: Date.now() - startTime,
+        });
+      }, timeoutMs);
+
+      const sendCommand = () => {
+        const words = [command];
+        for (const [key, value] of Object.entries(params)) {
+          words.push(`=${key}=${value}`);
+        }
+        client.write(this.encodeSentence(words));
+        stage = 'command';
+      };
+
+      client.on('error', (err: Error) => {
+        clearTimeout(timer);
+        this.logger.warn(`MikroTik command error (${ipAddress}): ${err.message}`);
+        done({
+          success: false,
+          data: rows,
+          error: `Connection failed: ${err.message}`,
+          latencyMs: Date.now() - startTime,
+        });
+      });
+
+      client.on('close', () => {
+        clearTimeout(timer);
+        if (!resolved) {
+          done({
+            success: false,
+            data: rows,
+            error: 'Connection closed unexpectedly',
+            latencyMs: Date.now() - startTime,
+          });
+        }
+      });
+
+      client.connect(port, ipAddress, () => {
+        this.logger.debug(`executeCommand: TCP connected to ${ipAddress}:${port}`);
+        if (stage === 'direct-login') {
+          client.write(
+            this.encodeSentence(['/login', `=name=${apiUsername}`, `=password=${apiPassword}`]),
+          );
+        } else {
+          client.write(this.encodeSentence(['/login']));
+        }
+      });
+
+      client.on('data', (data: Buffer) => {
+        rxBuf = Buffer.concat([rxBuf, data]);
+
+        while (rxBuf.length > 0) {
+          const result = this.decodeSentence(rxBuf);
+          if (!result || result.words.length === 0) break;
+          rxBuf = result.remaining;
+          const words = result.words;
+
+          this.logger.debug(`executeCommand stage=${stage} words=${JSON.stringify(words)}`);
+
+          if (stage === 'direct-login') {
+            if (words.includes('!done')) {
+              sendCommand();
+            } else if (words.includes('!trap')) {
+              const msg = words.find((w) => w.startsWith('=message='));
+              clearTimeout(timer);
+              done({
+                success: false,
+                data: [],
+                error: `Authentication failed: ${msg ? msg.substring(9) : 'unknown error'}`,
+                latencyMs: Date.now() - startTime,
+              });
+              return;
+            }
+          } else if (stage === 'challenge') {
+            const retWord = words.find((w) => w.startsWith('=ret='));
+            if (retWord) {
+              const challenge = retWord.substring(5);
+              const challengeBuf = Buffer.from(challenge, 'hex');
+              const hash = crypto.createHash('md5');
+              hash.update(Buffer.from([0]));
+              hash.update(Buffer.from(apiPassword, 'utf-8'));
+              hash.update(challengeBuf);
+              const response = '00' + hash.digest('hex');
+              stage = 'auth';
+              client.write(
+                this.encodeSentence(['/login', `=name=${apiUsername}`, `=response=${response}`]),
+              );
+            }
+          } else if (stage === 'auth') {
+            if (words.includes('!done')) {
+              sendCommand();
+            } else if (words.includes('!trap')) {
+              const msg = words.find((w) => w.startsWith('=message='));
+              clearTimeout(timer);
+              done({
+                success: false,
+                data: [],
+                error: `Authentication failed: ${msg ? msg.substring(9) : 'unknown error'}`,
+                latencyMs: Date.now() - startTime,
+              });
+              return;
+            }
+          } else if (stage === 'command') {
+            if (words.includes('!re')) {
+              const row: Record<string, string> = {};
+              for (const w of words) {
+                if (w.startsWith('=') && w !== '!re') {
+                  const eqIdx = w.indexOf('=', 1);
+                  if (eqIdx > 0) {
+                    row[w.substring(1, eqIdx)] = w.substring(eqIdx + 1);
+                  }
+                }
+              }
+              if (Object.keys(row).length > 0) rows.push(row);
+            } else if (words.includes('!done')) {
+              clearTimeout(timer);
+              done({
+                success: true,
+                data: rows,
+                latencyMs: Date.now() - startTime,
+              });
+            } else if (words.includes('!trap')) {
+              const msg = words.find((w) => w.startsWith('=message='));
+              clearTimeout(timer);
+              done({
+                success: false,
+                data: rows,
+                error: msg ? msg.substring(9) : 'Command failed',
+                latencyMs: Date.now() - startTime,
+              });
+              return;
             }
           }
         }
