@@ -1,5 +1,5 @@
 rest {
-    connect_uri = "http://api:3000/api/radius"
+    connect_uri = "http://host.docker.internal:3002/api/radius"
     connect_timeout = 4.0
     http_negotiation = default
     chunk = 0
