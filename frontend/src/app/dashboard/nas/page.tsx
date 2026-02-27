@@ -1,9 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, NasDevice } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import DataTable, { PageHeader } from '@/components/DataTable';
+
+interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  routerIdentity?: string;
+  routerVersion?: string;
+  latencyMs?: number;
+}
 
 const NAS_TYPES = [
   { value: 'mikrotik', label: 'Mikrotik' },
@@ -71,6 +79,8 @@ function AddNasModal({ open, onClose, onSaved, editDevice }: {
   const [showSecret, setShowSecret] = useState(false);
   const [showApiPassword, setShowApiPassword] = useState(false);
   const [showNasPassword, setShowNasPassword] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
 
   useEffect(() => {
     if (editDevice) {
@@ -91,7 +101,31 @@ function AddNasModal({ open, onClose, onSaved, editDevice }: {
       setForm(emptyForm);
     }
     setError('');
+    setTestResult(null);
   }, [editDevice, open]);
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      let result: ConnectionTestResult;
+      if (editDevice) {
+        result = await api.post<ConnectionTestResult>(`/nas/${editDevice.id}/test-connection`);
+      } else {
+        result = await api.post<ConnectionTestResult>('/nas/test-connection', {
+          ipAddress: form.ipAddress,
+          apiUsername: form.apiUsername,
+          apiPassword: form.apiPassword,
+          apiVersion: form.apiVersion,
+        });
+      }
+      setTestResult(result);
+    } catch (err: any) {
+      setTestResult({ success: false, message: err.message || 'Connection test failed' });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const set = (field: keyof NasFormData, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -321,6 +355,61 @@ function AddNasModal({ open, onClose, onSaved, editDevice }: {
             </div>
           </div>
 
+          {/* Test Connection Button */}
+          {isMikrotik && form.ipAddress && form.apiUsername && (
+            <div>
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={testing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50
+                  bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                {testing ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+                    </svg>
+                    Test API Connection
+                  </>
+                )}
+              </button>
+              {testResult && (
+                <div className={`mt-2 text-sm rounded-lg px-4 py-3 border ${
+                  testResult.success
+                    ? 'bg-green-50 border-green-200 text-green-800'
+                    : 'bg-red-50 border-red-200 text-red-700'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    {testResult.success ? (
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    <div>
+                      <p className="font-medium">{testResult.message}</p>
+                      {testResult.latencyMs !== undefined && (
+                        <p className="text-xs mt-0.5 opacity-75">Latency: {testResult.latencyMs}ms</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* API version */}
           <fieldset>
             <legend className="block text-sm font-medium text-gray-700 mb-2">API version</legend>
@@ -405,13 +494,42 @@ export default function NasPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editDevice, setEditDevice] = useState<NasDevice | null>(null);
+  const [statusMap, setStatusMap] = useState<Record<string, { reachable: boolean }>>({});
+  const [statusLoading, setStatusLoading] = useState(false);
+  const statusIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
     api.get<NasDevice[]>('/nas').then(setData).finally(() => setLoading(false));
   }, []);
 
+  const loadStatus = useCallback(async () => {
+    try {
+      setStatusLoading(true);
+      const result = await api.get<Record<string, { reachable: boolean }>>('/nas/status');
+      setStatusMap(result);
+    } catch {
+      // silently fail status checks
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Poll status every 30 seconds
+  useEffect(() => {
+    loadStatus();
+    statusIntervalRef.current = setInterval(loadStatus, 30000);
+    return () => {
+      if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
+    };
+  }, [loadStatus]);
+
+  // Refresh status when data changes
+  useEffect(() => {
+    if (data.length > 0) loadStatus();
+  }, [data, loadStatus]);
 
   const handleDelete = async (nas: NasDevice) => {
     if (!confirm(`Delete NAS "${nas.name}"?`)) return;
@@ -422,6 +540,40 @@ export default function NasPage() {
   };
 
   const columns = [
+    { key: 'status', label: 'Status', render: (n: NasDevice) => {
+      const status = statusMap[n.id];
+      const isMikrotik = n.type === 'mikrotik';
+      if (!isMikrotik) {
+        return (
+          <span className="inline-flex items-center gap-1.5" title="Status check not available for this device type">
+            <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+            <span className="text-xs text-gray-400">N/A</span>
+          </span>
+        );
+      }
+      if (!status) {
+        return (
+          <span className="inline-flex items-center gap-1.5" title="Checking...">
+            <span className="w-2.5 h-2.5 rounded-full bg-gray-300 animate-pulse" />
+            <span className="text-xs text-gray-400">...</span>
+          </span>
+        );
+      }
+      return status.reachable ? (
+        <span className="inline-flex items-center gap-1.5" title="API port reachable">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+          </span>
+          <span className="text-xs font-medium text-green-700">Online</span>
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5" title="API port unreachable">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <span className="text-xs font-medium text-red-600">Offline</span>
+        </span>
+      );
+    }},
     { key: 'name', label: 'Name', render: (n: NasDevice) => <span className="font-medium">{n.name}</span> },
     { key: 'ipAddress', label: 'IP Address' },
     { key: 'type', label: 'Type', render: (n: NasDevice) => (
@@ -462,15 +614,28 @@ export default function NasPage() {
       <PageHeader
         title="NAS Devices"
         action={
-          <button
-            onClick={() => { setEditDevice(null); setShowModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add NAS
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadStatus}
+              disabled={statusLoading}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              title="Refresh connectivity status"
+            >
+              <svg className={`w-4 h-4 ${statusLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+              </svg>
+              Refresh Status
+            </button>
+            <button
+              onClick={() => { setEditDevice(null); setShowModal(true); }}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add NAS
+            </button>
+          </div>
         }
       />
       <DataTable columns={columns} data={data} loading={loading} />

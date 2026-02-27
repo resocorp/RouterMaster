@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NasService } from './nas.service';
 import { CreateNasDto } from './dto/create-nas.dto';
 import { UpdateNasDto } from './dto/update-nas.dto';
+import { TestConnectionDto } from './dto/test-connection.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -20,6 +21,15 @@ export class NasController {
 
   @Get() @Permissions('list_nas') @ApiOperation({ summary: 'List NAS devices' })
   findAll(@TenantId() tid: string) { return this.service.findAll(tid); }
+
+  @Get('status') @Permissions('list_nas') @ApiOperation({ summary: 'Check reachability of all MikroTik NAS devices' })
+  checkStatusAll(@TenantId() tid: string) { return this.service.checkStatusAll(tid); }
+
+  @Post('test-connection') @Permissions('register_nas') @ApiOperation({ summary: 'Test MikroTik API connection with provided credentials' })
+  testConnectionDirect(@Body() dto: TestConnectionDto) { return this.service.testConnectionDirect(dto); }
+
+  @Post(':id/test-connection') @Permissions('edit_nas') @ApiOperation({ summary: 'Test MikroTik API connection for existing NAS device' })
+  testConnection(@Param('id') id: string, @TenantId() tid: string) { return this.service.testConnectionById(id, tid); }
 
   @Post() @Permissions('register_nas') @ApiOperation({ summary: 'Create NAS device' })
   create(@TenantId() tid: string, @Body() dto: CreateNasDto) { return this.service.create(tid, dto); }
