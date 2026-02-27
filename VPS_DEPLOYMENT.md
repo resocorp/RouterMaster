@@ -87,39 +87,18 @@ sed -i 's/redis_secret/CHANGE_THIS_REDIS_PASSWORD/g' docker-compose.yml
 
 ---
 
-## 4. Create Production docker-compose Override
+## 4. Production Docker Compose
 
-Create `docker-compose.prod.yml`:
+The project includes a standalone `docker-compose.prod.yml` for production. This file:
+- Uses the `runner` Dockerfile target (pre-built `dist/`)
+- Does **not** mount source code as a volume (unlike the dev compose)
+- Loads credentials from `.env` via `env_file`
+- Overrides Docker service hostnames (`DB_HOST=postgres`, `REDIS_HOST=redis`)
+- Includes the nginx reverse proxy service
 
-```yaml
-version: '3.8'
-
-services:
-  api:
-    build:
-      target: runner
-    command: node dist/main
-    environment:
-      NODE_ENV: production
-
-  frontend:
-    environment:
-      NEXT_PUBLIC_API_URL: https://radius.yourdomain.com/api
-
-  nginx:
-    image: nginx:alpine
-    container_name: radiusnexus-nginx
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /var/www/certbot:/var/www/certbot:ro
-    depends_on:
-      - api
-      - frontend
+Update the frontend URL in your `.env`:
+```env
+NEXT_PUBLIC_API_URL=https://radius.yourdomain.com/api
 ```
 
 ---
@@ -248,8 +227,8 @@ client mikrotik-main {
 ```bash
 cd /opt/radiusnexus
 
-# Build and start all services
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Build and start all services (use the production compose file)
+docker compose -f docker-compose.prod.yml up -d --build
 
 # Check status
 docker compose ps
@@ -337,7 +316,7 @@ These endpoints are **not protected by JWT** — they are internal only. On VPS,
 ```bash
 # Update application
 git pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build api frontend
+docker compose -f docker-compose.prod.yml up -d --build api frontend
 
 # Backup database
 docker exec radiusnexus-db pg_dump -U radiusnexus radiusnexus > backup_$(date +%Y%m%d).sql

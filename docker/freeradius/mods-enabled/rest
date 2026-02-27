@@ -1,7 +1,7 @@
 # Symlink to ../mods-available/rest
 # In Docker, this file is mounted directly
 rest {
-    connect_uri = "http://host.docker.internal:3002/api/radius"
+    connect_uri = "http://127.0.0.1:3000/api/radius"
     connect_timeout = 4.0
     http_negotiation = default
     chunk = 0

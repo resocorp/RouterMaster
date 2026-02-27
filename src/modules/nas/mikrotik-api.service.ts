@@ -129,6 +129,25 @@ export class MikrotikApiService {
               client.write(
                 this.encodeSentence(['/login', `=name=${apiUsername}`, `=response=${response}`]),
               );
+            } else if (words.includes('!trap') || words.includes('!fatal')) {
+              const msg = words.find((w) => w.startsWith('=message='));
+              clearTimeout(timer);
+              this.logger.warn(`Challenge login rejected by ${ipAddress}: ${msg?.substring(9) || 'unknown'}`);
+              done({
+                success: false,
+                message: `Login method not supported — try switching API version to "6.45.1+". ${msg ? msg.substring(9) : ''}`,
+                latencyMs: Date.now() - startTime,
+              });
+              return;
+            } else if (words.includes('!done') && !words.find((w) => w.startsWith('=ret='))) {
+              clearTimeout(timer);
+              this.logger.warn(`Challenge login: router ${ipAddress} returned !done without challenge — likely RouterOS 7.x`);
+              done({
+                success: false,
+                message: 'Router did not send challenge — switch API version to "6.45.1+" for RouterOS 6.45.1+ / 7.x',
+                latencyMs: Date.now() - startTime,
+              });
+              return;
             }
           } else if (stage === 'auth') {
             if (words.includes('!done')) {
@@ -299,6 +318,25 @@ export class MikrotikApiService {
               client.write(
                 this.encodeSentence(['/login', `=name=${apiUsername}`, `=response=${response}`]),
               );
+            } else if (words.includes('!trap') || words.includes('!fatal')) {
+              const msg = words.find((w) => w.startsWith('=message='));
+              clearTimeout(timer);
+              done({
+                success: false,
+                data: [],
+                error: `Login method not supported — switch API version to "6.45.1+". ${msg ? msg.substring(9) : ''}`,
+                latencyMs: Date.now() - startTime,
+              });
+              return;
+            } else if (words.includes('!done') && !words.find((w) => w.startsWith('=ret='))) {
+              clearTimeout(timer);
+              done({
+                success: false,
+                data: [],
+                error: 'Router did not send challenge — switch API version to "6.45.1+" for RouterOS 6.45.1+ / 7.x',
+                latencyMs: Date.now() - startTime,
+              });
+              return;
             }
           } else if (stage === 'auth') {
             if (words.includes('!done')) {

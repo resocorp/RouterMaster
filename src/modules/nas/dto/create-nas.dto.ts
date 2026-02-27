@@ -46,7 +46,7 @@ export class CreateNasDto {
   @MaxLength(255)
   apiPassword?: string;
 
-  @ApiPropertyOptional({ enum: ['pre-6.45.1', '6.45.1+'], default: 'pre-6.45.1' })
+  @ApiPropertyOptional({ enum: ['pre-6.45.1', '6.45.1+'], default: '6.45.1+' })
   @IsOptional()
   @IsIn(['pre-6.45.1', '6.45.1+'])
   apiVersion?: string;
